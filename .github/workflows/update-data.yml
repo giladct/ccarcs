@@ -1,0 +1,35 @@
+name: Update CCARCS Data
+
+on:
+  workflow_dispatch:   # manual trigger from GitHub Actions UI
+  schedule:
+    - cron: '0 6 * * 1'  # every Monday at 06:00 UTC
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run data updater
+        run: python update_data.py
+
+      - name: Commit and push updated data.js
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.js
+          git diff --cached --quiet && echo "No changes to commit" || \
+            git commit -m "Update CCARCS data $(date -u +%Y-%m-%d)" && git push

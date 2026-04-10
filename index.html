@@ -230,13 +230,13 @@
     width: 100%;
     border-collapse: collapse;
     background: #fff;
-    font-size: 12px;
+    font-size: 11px;
   }
   thead th {
     background: #f0f4fa;
     border-bottom: 2px solid #dde1e7;
     border-right: 1px solid #e5e8ef;
-    padding: 8px 10px;
+    padding: 5px 8px;
     text-align: left;
     font-weight: 600;
     color: #444;
@@ -247,16 +247,16 @@
     user-select: none;
   }
   thead th:hover { background: #e4ecf7; }
-  thead th .sort-arrow { margin-left: 4px; opacity: .4; font-size: 10px; }
+  thead th .sort-arrow { margin-left: 3px; opacity: .4; font-size: 9px; }
   thead th.sorted .sort-arrow { opacity: 1; color: #3b7dd8; }
 
   tbody tr { border-bottom: 1px solid #eef0f3; }
   tbody tr:hover { background: #f5f8ff; }
   tbody td {
-    padding: 6px 10px;
+    padding: 3px 8px;
     vertical-align: middle;
     border-right: 1px solid #f0f0f0;
-    max-width: 160px;
+    max-width: 140px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -422,8 +422,17 @@
     box-shadow: 0 8px 32px rgba(0,0,0,.25);
   }
   .modal-box h2 { font-size: 15px; color: #1a3a5c; margin-bottom: 12px; }
-  .modal-box ol { padding-left: 18px; font-size: 13px; line-height: 1.8; color: #333; }
+  .modal-box h3 { font-size: 12px; color: #1a3a5c; margin: 14px 0 4px; text-transform: uppercase; letter-spacing: .4px; }
+  .modal-box ol, .modal-box ul { padding-left: 18px; font-size: 13px; line-height: 1.8; color: #333; margin: 0; }
   .modal-box .modal-note { font-size: 11px; color: #888; margin-top: 12px; }
+  .modal-divider { border: none; border-top: 1px solid #e8eaf0; margin: 14px 0 0; }
+  .modal-action-btn {
+    display: inline-block; margin-top: 8px;
+    padding: 6px 14px; background: #2563c7; color: #fff;
+    border: none; border-radius: 4px; cursor: pointer;
+    font-size: 12px; text-decoration: none;
+  }
+  .modal-action-btn:hover { background: #1a4fa3; }
   .modal-box .modal-close {
     margin-top: 16px; float: right;
     padding: 6px 18px; background: #1a3a5c; color: #fff;
@@ -445,11 +454,31 @@
 <div id="update-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box">
     <h2>&#8635; Update Register Data</h2>
+
+    <h3>Option A &mdash; Local (Windows)</h3>
     <ol>
       <li>Double-click <strong>update_data.bat</strong> in the project folder</li>
-      <li>Wait for the script to finish (downloads, converts, rebuilds)</li>
+      <li>Wait for the script to finish</li>
       <li>Reload this page (<strong>F5</strong>)</li>
     </ol>
+
+    <hr class="modal-divider">
+    <h3>Option B &mdash; Python (any OS)</h3>
+    <ol>
+      <li>Install once: <code>pip install requests</code></li>
+      <li>Run: <code>python update_data.py</code></li>
+      <li>Reload this page (<strong>F5</strong>)</li>
+    </ol>
+
+    <hr class="modal-divider">
+    <h3>Option C &mdash; GitHub Actions (no local files needed)</h3>
+    <ol>
+      <li>Click the button below to open GitHub Actions</li>
+      <li>Click <strong>Run workflow</strong> &rarr; <strong>Run workflow</strong></li>
+      <li>Wait ~2 minutes, then reload this page (<strong>F5</strong>)</li>
+    </ol>
+    <a class="modal-action-btn" href="https://github.com/giladct/ccarcs/actions/workflows/update-data.yml" target="_blank">Open GitHub Actions &#8599;</a>
+
     <p class="modal-note" id="data-date-note"></p>
     <button class="modal-close" onclick="document.getElementById('update-modal').classList.remove('open')">Close</button>
     <div style="clear:both"></div>
@@ -753,18 +782,22 @@ function syncAllBox(id) {
 }
 
 function updateMsLabel(id) {
-  const all = itemBoxes(id).filter(b => b.checked);
-  const vis = visibleBoxes(id);
+  const avail = itemBoxes(id).filter(b => b.closest('label').dataset.avail !== '0');
+  const checked = avail.filter(b => b.checked);
   const sumEl = document.getElementById(id + '-sum');
   if (!sumEl) return;
-  sumEl.textContent = all.length === 0 ? 'None'
-    : all.length === vis.length && vis.length === itemBoxes(id).filter(b => b.closest('label').dataset.avail !== '0').length ? 'All'
-    : all.length + ' selected';
+  sumEl.textContent = checked.length === 0 || checked.length === avail.length ? 'All'
+    : checked.length + ' selected';
 }
 
 function getSelected(id) {
-  const checked = itemBoxes(id).filter(b => b.checked).map(b => b.value);
-  return checked.length === 0 ? null : new Set(checked);
+  // Only consider items currently available (not hidden by other filters)
+  const availBoxes = itemBoxes(id).filter(b => b.closest('label').dataset.avail !== '0');
+  if (availBoxes.length === 0) return null;
+  const checked = availBoxes.filter(b => b.checked).map(b => b.value);
+  // All available items checked (or none checked) = no filter from this dropdown
+  if (checked.length === availBoxes.length || checked.length === 0) return null;
+  return new Set(checked);
 }
 
 function resetMs(id) {
@@ -781,7 +814,7 @@ function updateMsAvailable(id, availableSet) {
     const lbl = b.closest('label');
     lbl.dataset.avail = avail ? '1' : '0';
     lbl.style.display = avail ? '' : 'none';
-    if (!avail) b.checked = false;
+    // Do NOT uncheck hidden items — preserve user's selection so it restores when they become available again
   });
   syncAllBox(id); updateMsLabel(id);
 }
@@ -936,6 +969,16 @@ function checkRecord(r, s, skipId) {
 }
 
 function applyFilters() {
+  // Reset availability so pass-1 getFilterState() reads the user's actual checkbox
+  // state, not stale avail left over from the previous applyFilters run.
+  Object.keys(MS_FIELD).forEach(id => {
+    itemBoxes(id).forEach(b => {
+      const lbl = b.closest('label');
+      lbl.dataset.avail = '1';
+      lbl.style.display = '';
+    });
+  });
+
   const s = getFilterState();
 
   // Update each dropdown to show only values relevant given all OTHER active filters
@@ -1056,11 +1099,12 @@ function renderCharts() {
   const ownerMap = {};
   filtered.forEach(r => {
     const key = (r.Owner_Name || '').trim() || '(unknown)';
-    if (!ownerMap[key]) ownerMap[key] = { name: key, province: (r.Province || '').trim(), date: '', count: 0 };
-    ownerMap[key].count++;
+    if (!ownerMap[key]) ownerMap[key] = { name: key, province: (r.Province || '').trim(), date: '', regs: new Set() };
+    ownerMap[key].regs.add(r.Registration);
     const d = (r.Owner_Registered_Since || '').trim();
     if (d && d > ownerMap[key].date) ownerMap[key].date = d;
   });
+  Object.values(ownerMap).forEach(o => { o.count = o.regs.size; });
 
   let owners = Object.values(ownerMap);
   owners.sort((a, b) => {
@@ -1084,9 +1128,10 @@ function renderCharts() {
   const mfrMap = {};
   filtered.forEach(r => {
     const m = normMfr(r.Manufacturer);
-    mfrMap[m] = (mfrMap[m] || 0) + 1;
+    if (!mfrMap[m]) mfrMap[m] = new Set();
+    mfrMap[m].add(r.Registration);
   });
-  let mfrs = Object.entries(mfrMap).sort((a,b) => b[1]-a[1]).slice(0, 15);
+  let mfrs = Object.entries(mfrMap).map(([m, s]) => [m, s.size]).sort((a,b) => b[1]-a[1]).slice(0, 15);
   const maxCount = mfrs[0]?.[1] || 1;
 
   document.getElementById('mfr-list').innerHTML = mfrs.map(([name, count]) => `
@@ -1214,10 +1259,17 @@ function renderMap() {
   filtered.forEach(r => {
     const key = keyFn(r);
     if (!key || !coordMap[key]) return;
-    if (!groups[key]) groups[key] = { count: 0, mfrCounts: {} };
-    groups[key].count++;
+    if (!groups[key]) groups[key] = { regs: new Set(), mfrRegs: {} };
+    groups[key].regs.add(r.Registration);
     const m = normMfr(r.Manufacturer);
-    groups[key].mfrCounts[m] = (groups[key].mfrCounts[m] || 0) + 1;
+    if (!groups[key].mfrRegs[m]) groups[key].mfrRegs[m] = new Set();
+    groups[key].mfrRegs[m].add(r.Registration);
+  });
+  // Convert sets to counts
+  Object.values(groups).forEach(g => {
+    g.count = g.regs.size;
+    g.mfrCounts = {};
+    Object.entries(g.mfrRegs).forEach(([m, s]) => { g.mfrCounts[m] = s.size; });
   });
 
   const maxCount = Math.max(...Object.values(groups).map(g => g.count), 1);
