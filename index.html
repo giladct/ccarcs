@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canadian Civil Aircraft Register</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    background: #f5f6fa;
+    color: #333;
+  }
+
+  header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header span { font-size: 12px; opacity: .7; }
+
+  .filters {
+    background: #fff;
+    border-bottom: 1px solid #dde1e7;
+    padding: 12px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .filter-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .filter-group input {
+    border: 1px solid #ccd0d9;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 12px;
+    height: 30px;
+    background: #fff;
+    min-width: 120px;
+    outline: none;
+  }
+  .filter-group input:focus {
+    border-color: #3b7dd8;
+    box-shadow: 0 0 0 2px rgba(59,125,216,.15);
+  }
+
+  /* ── Multi-select dropdown ── */
+  details.ms-drop { position: relative; }
+  details.ms-drop summary {
+    border: 1px solid #ccd0d9;
+    border-radius: 4px;
+    padding: 0 24px 0 8px;
+    font-size: 12px;
+    height: 30px;
+    background: #fff;
+    min-width: 110px;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+  }
+  details.ms-drop summary::-webkit-details-marker { display: none; }
+  details.ms-drop summary::after { content: '▾'; position: absolute; right: 7px; opacity: .6; }
+  details.ms-drop[open] summary { border-color: #3b7dd8; box-shadow: 0 0 0 2px rgba(59,125,216,.15); }
+  details.ms-drop[open] summary::after { content: '▴'; }
+  .ms-options {
+    position: absolute;
+    top: 32px; left: 0;
+    background: #fff;
+    border: 1px solid #ccd0d9;
+    border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.13);
+    z-index: 1000;
+    min-width: 150px;
+  }
+  .ms-search-wrap {
+    padding: 5px 7px 4px;
+    border-bottom: 1px solid #eee;
+  }
+  .ms-search {
+    width: 100%;
+    border: 1px solid #ccd0d9;
+    border-radius: 3px;
+    padding: 3px 6px;
+    font-size: 11px;
+    outline: none;
+  }
+  .ms-search:focus { border-color: #3b7dd8; }
+  .ms-items-scroll {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .ms-opt {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .ms-opt:hover { background: #f0f4ff; }
+  .ms-opt input[type="checkbox"] {
+    width: 11px; height: 11px;
+    margin: 0 3px 0 0; flex-shrink: 0;
+    cursor: pointer;
+    accent-color: #3b7dd8;
+  }
+  .ms-all-opt {
+    font-weight: 600;
+    color: #1a3a5c;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+    margin-bottom: 1px;
+  }
+  .ms-btns {
+    display: flex;
+    gap: 5px;
+    padding: 5px 7px;
+    border-top: 1px solid #eee;
+  }
+  .ms-btns button {
+    flex: 1;
+    border: 1px solid #ccd0d9;
+    border-radius: 3px;
+    padding: 3px 0;
+    font-size: 11px;
+    cursor: pointer;
+    background: #fff;
+    color: #555;
+  }
+  .ms-btns button:hover { background: #f0f0f0; }
+  .ms-btns .ms-apply { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+  .ms-btns .ms-apply:hover { background: #234d7a; }
+
+  .btn-clear {
+    height: 30px;
+    padding: 0 14px;
+    border: 1px solid #ccd0d9;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+    align-self: flex-end;
+  }
+  .btn-clear:hover { background: #f0f0f0; }
+
+  /* ── Registration popup ── */
+  .reg-popup {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #ccd0d9;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    padding: 4px 0;
+    z-index: 3000;
+    min-width: 190px;
+    display: none;
+  }
+  .reg-popup.open { display: block; }
+  .reg-popup a {
+    display: block;
+    padding: 7px 14px;
+    font-size: 12px;
+    color: #2563c7;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .reg-popup a:hover { background: #f0f4ff; }
+
+  .toolbar {
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+  }
+  .results-count { font-size: 12px; color: #666; }
+  .results-count strong { color: #1a3a5c; }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .pagination button {
+    border: 1px solid #ccd0d9;
+    background: #fff;
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .pagination button:hover:not(:disabled) { background: #f0f4ff; }
+  .pagination button:disabled { opacity: .4; cursor: default; }
+  .pagination span { color: #555; }
+
+  .table-wrap {
+    overflow-x: auto;
+    padding: 0 0 20px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 12px;
+  }
+  thead th {
+    background: #f0f4fa;
+    border-bottom: 2px solid #dde1e7;
+    border-right: 1px solid #e5e8ef;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #444;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { background: #e4ecf7; }
+  thead th .sort-arrow { margin-left: 4px; opacity: .4; font-size: 10px; }
+  thead th.sorted .sort-arrow { opacity: 1; color: #3b7dd8; }
+
+  tbody tr { border-bottom: 1px solid #eef0f3; }
+  tbody tr:hover { background: #f5f8ff; }
+  tbody td {
+    padding: 6px 10px;
+    vertical-align: middle;
+    border-right: 1px solid #f0f0f0;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  td.reg { font-weight: 600; white-space: nowrap; max-width: none; }
+  td.reg a { color: #2563c7; text-decoration: none; }
+  td.reg a:hover { text-decoration: underline; }
+
+  .empty { text-align: center; padding: 40px; color: #999; }
+
+  /* ── 3-panel row ── */
+  .panels-row {
+    display: flex;
+    height: 380px;
+    background: #fff;
+    border-bottom: 1px solid #dde1e7;
+  }
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #dde1e7;
+    overflow: hidden;
+  }
+  .panel-owner { flex: 1; min-width: 0; }
+  .panel-mfr   { flex: 1; min-width: 0; }
+  .panel-map   { flex: 1; flex-direction: row; min-width: 0; border-right: none; }
+  .side-panel h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a3a5c;
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+  }
+
+  /* By Owner table */
+  .owner-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .owner-table thead th {
+    background: none;
+    border: none;
+    border-bottom: 1px solid #dde1e7;
+    padding: 4px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #666;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+    position: static;
+  }
+  .owner-table thead th:hover { color: #1a3a5c; }
+  .owner-table tbody tr { border-bottom: 1px solid #f0f2f5; }
+  .owner-table tbody tr:hover { background: #f5f8ff; }
+  .owner-table td {
+    padding: 4px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+  .owner-table td.province { color: #2563c7; }
+  .owner-table td.count {
+    text-align: right;
+    font-weight: 600;
+    color: #555;
+    width: 36px;
+    max-width: 36px;
+  }
+  .owner-scroll { flex: 1; overflow-y: auto; }
+
+  /* By Manufacturer bars */
+  .mfr-list { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; overflow-y: auto; flex: 1; }
+  .mfr-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .mfr-name { width: 70px; text-align: right; flex-shrink: 0; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+  .mfr-bar-wrap { flex: 1; background: #f0f2f5; border-radius: 3px; height: 16px; overflow: hidden; }
+  .mfr-bar { height: 100%; border-radius: 3px; transition: width .3s ease; }
+  .mfr-count { font-weight: 600; color: #444; font-size: 11px; width: 34px; text-align: right; }
+
+  /* ── Map (inside panel-map) ── */
+  #map { flex: 1; }
+
+  .map-left { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .map-toolbar {
+    background: #f7f9fc;
+    border-bottom: 1px solid #dde1e7;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    flex-shrink: 0;
+  }
+  .grp-btn {
+    border: 1px solid #ccd0d9;
+    background: #fff;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #444;
+    transition: background .15s, color .15s;
+  }
+  .grp-btn:hover { background: #e8f0fe; }
+  .grp-btn.active { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+
+  /* ── Dual range slider ── */
+  .dr-group { display: flex; flex-direction: column; gap: 3px; }
+  .dr-group label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: .4px; }
+  .dr-labels { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-bottom: 2px; }
+  .dr-track {
+    position: relative; height: 20px; display: flex; align-items: center;
+    min-width: 160px;
+  }
+  .dr-track-bg {
+    position: absolute; left: 0; right: 0; height: 4px;
+    background: #dde1e7; border-radius: 2px;
+  }
+  .dr-fill {
+    position: absolute; height: 4px; background: #3b7dd8; border-radius: 2px;
+  }
+  .dr-track input[type=range] {
+    position: absolute; width: 100%; pointer-events: none;
+    appearance: none; background: transparent; height: 4px; margin: 0;
+  }
+  .dr-track input[type=range]::-webkit-slider-thumb {
+    pointer-events: all; appearance: none;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #3b7dd8; cursor: pointer;
+    border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  }
+  .dr-track input[type=range]::-moz-range-thumb {
+    pointer-events: all; width: 13px; height: 13px; border-radius: 50%;
+    background: #3b7dd8; cursor: pointer; border: 2px solid #fff;
+  }
+
+  /* ── Filter row layout ── */
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .filter-dl-link { font-size: 11px; color: #666; padding-top: 4px; }
+  .filter-dl-link a { color: #2563c7; }
+
+  /* ── Update modal ── */
+  .update-btn {
+    margin-left: auto; padding: 6px 14px;
+    background: #2563c7; color: #fff;
+    border: none; border-radius: 4px; cursor: pointer; font-size: 12px;
+  }
+  .update-btn:hover { background: #1a4fa3; }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 4000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 8px;
+    padding: 24px 28px; max-width: 420px; width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  }
+  .modal-box h2 { font-size: 15px; color: #1a3a5c; margin-bottom: 12px; }
+  .modal-box ol { padding-left: 18px; font-size: 13px; line-height: 1.8; color: #333; }
+  .modal-box .modal-note { font-size: 11px; color: #888; margin-top: 12px; }
+  .modal-box .modal-close {
+    margin-top: 16px; float: right;
+    padding: 6px 18px; background: #1a3a5c; color: #fff;
+    border: none; border-radius: 4px; cursor: pointer; font-size: 12px;
+  }
+  .modal-box .modal-close:hover { background: #234d7a; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Canadian Civil Aircraft Register</h1>
+    <span>Transport Canada — CCARCS</span>
+  </div>
+  <button class="update-btn" onclick="document.getElementById('update-modal').classList.add('open')">&#8635; Update Data</button>
+</header>
+
+<div id="update-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <h2>&#8635; Update Register Data</h2>
+    <ol>
+      <li>Double-click <strong>update_data.bat</strong> in the project folder</li>
+      <li>Wait for the script to finish (downloads, converts, rebuilds)</li>
+      <li>Reload this page (<strong>F5</strong>)</li>
+    </ol>
+    <p class="modal-note" id="data-date-note"></p>
+    <button class="modal-close" onclick="document.getElementById('update-modal').classList.remove('open')">Close</button>
+    <div style="clear:both"></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-row">
+    <!-- Row 1: Registration | Serial No. -->
+    <div class="filter-group">
+      <label>Registration</label>
+      <input type="text" id="f-reg" placeholder="">
+    </div>
+    <div class="filter-group">
+      <label>Serial No.</label>
+      <input type="text" id="f-serial" placeholder="">
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <!-- Row 2: Manufacturer* | Manufacturer -->
+    <div class="filter-group">
+      <label>Manufacturer*</label>
+      <details class="ms-drop" id="ms-mfr-group">
+        <summary id="ms-mfr-group-sum">All</summary>
+        <div class="ms-options" id="ms-mfr-group-opts"></div>
+      </details>
+    </div>
+    <div class="filter-group">
+      <label>Manufacturer</label>
+      <details class="ms-drop" id="ms-mfr">
+        <summary id="ms-mfr-sum">All</summary>
+        <div class="ms-options" id="ms-mfr-opts"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Row 3: Model -->
+  <div class="filter-group">
+    <label>Model</label>
+    <details class="ms-drop" id="ms-model">
+      <summary id="ms-model-sum">All</summary>
+      <div class="ms-options" id="ms-model-opts"></div>
+    </details>
+  </div>
+
+  <!-- Row 4: Reg. Purpose -->
+  <div class="filter-group">
+    <label>Reg. Purpose</label>
+    <details class="ms-drop" id="ms-purpose">
+      <summary id="ms-purpose-sum">All</summary>
+      <div class="ms-options" id="ms-purpose-opts"></div>
+    </details>
+  </div>
+
+  <!-- Row 5: Owner Registered Since (range) -->
+  <div class="dr-group">
+    <label>Owner Registered Since</label>
+    <div class="dr-labels"><span id="dr-date-lo-lbl"></span><span id="dr-date-hi-lbl"></span></div>
+    <div class="dr-track">
+      <div class="dr-track-bg"></div>
+      <div class="dr-fill" id="dr-date-fill"></div>
+      <input type="range" id="dr-date-lo">
+      <input type="range" id="dr-date-hi">
+    </div>
+  </div>
+
+  <!-- Row 6: Year of Manu. (range) -->
+  <div class="dr-group">
+    <label>Year of Manu.</label>
+    <div class="dr-labels"><span id="dr-year-lo-lbl"></span><span id="dr-year-hi-lbl"></span></div>
+    <div class="dr-track">
+      <div class="dr-track-bg"></div>
+      <div class="dr-fill" id="dr-year-fill"></div>
+      <input type="range" id="dr-year-lo">
+      <input type="range" id="dr-year-hi">
+    </div>
+  </div>
+
+  <!-- Row 7: Owner Name -->
+  <div class="filter-group">
+    <label>Owner Name</label>
+    <input type="text" id="f-owner" placeholder="">
+  </div>
+
+  <!-- Row 8: Owner Province -->
+  <div class="filter-group">
+    <label>Owner Province</label>
+    <details class="ms-drop" id="ms-province">
+      <summary id="ms-province-sum">All</summary>
+      <div class="ms-options" id="ms-province-opts"></div>
+    </details>
+  </div>
+
+  <div class="filter-row">
+    <!-- Row 9: Engine Type | No. Of Engines -->
+    <div class="filter-group">
+      <label>Engine Type</label>
+      <details class="ms-drop" id="ms-engine">
+        <summary id="ms-engine-sum">All</summary>
+        <div class="ms-options" id="ms-engine-opts"></div>
+      </details>
+    </div>
+    <div class="filter-group">
+      <label>No. Of Engines</label>
+      <details class="ms-drop" id="ms-engines-num">
+        <summary id="ms-engines-num-sum">All</summary>
+        <div class="ms-options" id="ms-engines-num-opts"></div>
+      </details>
+    </div>
+  </div>
+
+  <button class="btn-clear" onclick="clearFilters()">Clear</button>
+
+  <div class="filter-dl-link">
+    Register download:<br>
+    <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank">
+      https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx
+    </a>
+  </div>
+</div>
+
+<div class="panels-row">
+
+  <!-- By Owner -->
+  <div class="side-panel panel-owner">
+    <h3>By Owner</h3>
+    <table class="owner-table">
+      <thead>
+        <tr>
+          <th onclick="sortOwner('name')">Owner Name ⇅</th>
+          <th onclick="sortOwner('province')">Province</th>
+          <th onclick="sortOwner('date')">Latest Register</th>
+          <th onclick="sortOwner('count')"></th>
+        </tr>
+      </thead>
+    </table>
+    <div class="owner-scroll">
+      <table class="owner-table">
+        <tbody id="owner-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- By Manufacturer -->
+  <div class="side-panel panel-mfr">
+    <h3>By Manufacturer</h3>
+    <div class="mfr-list" id="mfr-list"></div>
+  </div>
+
+  <!-- Map -->
+  <div class="side-panel panel-map">
+    <div class="map-left">
+      <div class="map-toolbar">
+        Group by:
+        <button class="grp-btn active" id="grp-zip3"     onclick="setGroup('zip3')">Zip 3</button>
+        <button class="grp-btn"        id="grp-zip2"     onclick="setGroup('zip2')">Zip 2</button>
+        <button class="grp-btn"        id="grp-zip1"     onclick="setGroup('zip1')">Zip 1</button>
+        <button class="grp-btn"        id="grp-province" onclick="setGroup('province')">Province</button>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div><!-- end panel-map -->
+
+</div><!-- end panels-row -->
+
+<div class="toolbar">
+  <div class="results-count" id="results-count">Loading…</div>
+  <div class="pagination">
+    <button id="btn-prev" onclick="changePage(-1)">&#8592; Prev</button>
+    <span id="page-info"></span>
+    <button id="btn-next" onclick="changePage(1)">Next &#8594;</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('Registration')">Registration <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Owner_Name')">Owner Name <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Year_of_Manu')">Year of Manu. <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Manufacturer')">Manufacturer <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Model')">Model <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Serial_No')">Serial No. <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Owner_Registered_Since')">Owner Registered Since <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Reg_Purpose')">Reg. Purpose <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('No_Of_Engines')">No. Of Engines <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Engine_Type')">Engine Type <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Address')">Address <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('City')">City <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Province')">Province <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Postal_Code')">Postal Code <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Country')">Country <span class="sort-arrow">&#8597;</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div id="reg-popup" class="reg-popup"></div>
+
+<script src="data.js"></script>
+<script src="fsa_coords.js"></script>
+<script>
+const PAGE_SIZE = 100;
+let filtered = [];
+let currentPage = 1;
+let sortCol = 'Registration';
+let sortAsc = true;
+
+// Show data date in update modal
+if (typeof DATA_DATE !== 'undefined') {
+  const el = document.getElementById('data-date-note');
+  if (el) el.textContent = 'Current data: ' + DATA_DATE;
+}
+
+// ── Multi-select ────────────────────────────────────────
+const KNOWN_MFR_LIST = ['Cessna','Piper','Beech','Cirrus','Diamond','Mooney','QUEST','Tecnam'];
+const MS_DEFAULTS = { 'ms-mfr-group': new Set(KNOWN_MFR_LIST) }; // Other excluded by default
+
+const esc = s => (s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+
+function itemBoxes(id) {
+  return [...document.querySelectorAll(`#${id}-opts input[type="checkbox"]:not(#${id}-all)`)];
+}
+
+const msSavedState = {};
+
+function initMs(id, values, defaultSet) {
+  const opts = document.getElementById(id + '-opts');
+  opts.innerHTML =
+    `<div class="ms-search-wrap"><input type="text" class="ms-search" id="${id}-search" placeholder="Enter search text" oninput="msSearch('${id}',this.value)" onclick="event.stopPropagation()"></div>` +
+    `<div class="ms-items-scroll" id="${id}-scroll">` +
+      `<label class="ms-opt ms-all-opt"><input type="checkbox" id="${id}-all" onchange="msToggleAll('${id}',this.checked)"> (All)</label>` +
+      values.map(v =>
+        `<label class="ms-opt"><input type="checkbox" value="${esc(v)}" ${defaultSet ? (defaultSet.has(v) ? 'checked' : '') : 'checked'} onchange="msChanged('${id}')">${esc(v)}</label>`
+      ).join('') +
+    `</div>` +
+    `<div class="ms-btns"><button type="button" onclick="msCancel('${id}')">Cancel</button><button type="button" class="ms-apply" onclick="msApply('${id}')">Apply</button></div>`;
+  // Save state when dropdown opens; close others
+  document.getElementById(id).addEventListener('toggle', function() {
+    if (this.open) {
+      document.querySelectorAll('details.ms-drop[open]').forEach(d => { if (d.id !== id) msCancel(d.id); });
+      msSavedState[id] = itemBoxes(id).map(b => b.checked);
+    }
+  });
+  syncAllBox(id);
+  updateMsLabel(id);
+}
+
+function visibleBoxes(id) {
+  return itemBoxes(id).filter(b => {
+    const lbl = b.closest('label');
+    return lbl.dataset.avail !== '0' && lbl.style.display !== 'none';
+  });
+}
+
+function msToggleAll(id, checked) {
+  visibleBoxes(id).forEach(b => b.checked = checked);
+  syncAllBox(id); updateMsLabel(id);
+}
+
+function msChanged(id) { syncAllBox(id); updateMsLabel(id); }
+
+function msCancel(id) {
+  const saved = msSavedState[id];
+  if (saved) { itemBoxes(id).forEach((b, i) => { b.checked = !!saved[i]; }); delete msSavedState[id]; }
+  const s = document.getElementById(id + '-search');
+  if (s) { s.value = ''; msSearch(id, ''); }
+  document.getElementById(id).removeAttribute('open');
+  syncAllBox(id); updateMsLabel(id);
+}
+
+function msApply(id) {
+  const s = document.getElementById(id + '-search');
+  if (s) { s.value = ''; msSearch(id, ''); }
+  document.getElementById(id).removeAttribute('open');
+  delete msSavedState[id];
+  syncAllBox(id); updateMsLabel(id);
+  applyFilters();
+}
+
+function msSearch(id, q) {
+  const query = (q || '').toLowerCase();
+  itemBoxes(id).forEach(b => {
+    const lbl = b.closest('label');
+    if (lbl.dataset.avail === '0') { lbl.style.display = 'none'; return; }
+    lbl.style.display = (!query || b.value.toLowerCase().includes(query)) ? '' : 'none';
+  });
+  syncAllBox(id);
+}
+
+function syncAllBox(id) {
+  const vb = visibleBoxes(id);
+  const n  = vb.filter(b => b.checked).length;
+  const allBox = document.getElementById(id + '-all');
+  if (!allBox) return;
+  allBox.checked = vb.length > 0 && n === vb.length;
+  allBox.indeterminate = n > 0 && n < vb.length;
+}
+
+function updateMsLabel(id) {
+  const all = itemBoxes(id).filter(b => b.checked);
+  const vis = visibleBoxes(id);
+  const sumEl = document.getElementById(id + '-sum');
+  if (!sumEl) return;
+  sumEl.textContent = all.length === 0 ? 'None'
+    : all.length === vis.length && vis.length === itemBoxes(id).filter(b => b.closest('label').dataset.avail !== '0').length ? 'All'
+    : all.length + ' selected';
+}
+
+function getSelected(id) {
+  const checked = itemBoxes(id).filter(b => b.checked).map(b => b.value);
+  return checked.length === 0 ? null : new Set(checked);
+}
+
+function resetMs(id) {
+  const def = MS_DEFAULTS[id] || null;
+  itemBoxes(id).forEach(b => { b.checked = def ? def.has(b.value) : true; });
+  const s = document.getElementById(id + '-search');
+  if (s) { s.value = ''; msSearch(id, ''); }
+  syncAllBox(id); updateMsLabel(id);
+}
+
+function updateMsAvailable(id, availableSet) {
+  itemBoxes(id).forEach(b => {
+    const avail = availableSet.has(b.value);
+    const lbl = b.closest('label');
+    lbl.dataset.avail = avail ? '1' : '0';
+    lbl.style.display = avail ? '' : 'none';
+    if (!avail) b.checked = false;
+  });
+  syncAllBox(id); updateMsLabel(id);
+}
+
+function uniqueVals(key) {
+  return [...new Set(AIRCRAFT_DATA.map(r => r[key] == null ? '' : String(r[key]).trim()))].filter(Boolean).sort();
+}
+
+// Init all multi-selects
+initMs('ms-mfr-group',   [...KNOWN_MFR_LIST, 'Other'], MS_DEFAULTS['ms-mfr-group']);
+initMs('ms-mfr',         uniqueVals('Manufacturer'),   null);
+initMs('ms-model',       uniqueVals('Model'),           null);
+initMs('ms-engine',      uniqueVals('Engine_Type'),     null);
+initMs('ms-purpose',     uniqueVals('Reg_Purpose'),     null);
+initMs('ms-province',    uniqueVals('Province'),        null);
+initMs('ms-engines-num', uniqueVals('No_Of_Engines').sort((a,b) => +a - +b), null);
+
+// Init dual-range sliders
+const allDates = AIRCRAFT_DATA.map(r => dateToN(r.Owner_Registered_Since)).filter(Boolean);
+const minDate = allDates.reduce((a,b) => a < b ? a : b, allDates[0] || 0);
+const maxDate = allDates.reduce((a,b) => a > b ? a : b, allDates[0] || 0);
+initDualRange('dr-date', minDate, maxDate, nToDate, nToDate);
+
+const minYear = 1936, maxYear = 2026;
+initDualRange('dr-year', minYear, maxYear, y => y, y => y);
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('details.ms-drop'))
+    document.querySelectorAll('details.ms-drop[open]').forEach(d => msCancel(d.id));
+  if (!e.target.closest('#reg-popup') && !e.target.closest('td.reg'))
+    document.getElementById('reg-popup').classList.remove('open');
+});
+
+function showRegPopup(e, reg) {
+  e.preventDefault();
+  e.stopPropagation();
+  const t = reg.trim();
+  const popup = document.getElementById('reg-popup');
+  popup.innerHTML =
+    `<a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/RchHsRes.aspx?mh=${encodeURIComponent(t)}" target="_blank">Reg. History</a>` +
+    `<a href="https://www.flightaware.com/live/flight/C${encodeURIComponent(t)}" target="_blank">FlightAware</a>` +
+    `<a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/RchSimpRes.aspx?cn=%7c%7c&mn=%7c%7c&sn=%7c%7c&on=%7c%7c&m=%7c${encodeURIComponent(t)}%7c&rfr=RchSimp.aspx" target="_blank">CA Register</a>`;
+  // Position near click, keep inside viewport
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX + 6, y = e.clientY + 6;
+  popup.classList.add('open');
+  if (x + popup.offsetWidth  > vw - 8) x = e.clientX - popup.offsetWidth  - 6;
+  if (y + popup.offsetHeight > vh - 8) y = e.clientY - popup.offsetHeight - 6;
+  popup.style.left = x + 'px';
+  popup.style.top  = y + 'px';
+}
+
+// Debounce for text inputs
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+const textInputs = ['f-reg','f-serial','f-owner'];
+textInputs.forEach(id => document.getElementById(id).addEventListener('input', debounce(applyFilters, 250)));
+
+function getVal(id) { return document.getElementById(id).value.trim().toLowerCase(); }
+
+// Field extractors for each multi-select (used for available-value computation)
+const MS_FIELD = {
+  'ms-mfr-group':   r => normMfr(r.Manufacturer),
+  'ms-mfr':         r => (r.Manufacturer       || '').trim(),
+  'ms-model':       r => (r.Model              || '').trim(),
+  'ms-engine':      r => (r.Engine_Type        || '').trim(),
+  'ms-purpose':     r => (r.Reg_Purpose        || '').trim(),
+  'ms-province':    r => (r.Province           || '').trim(),
+  'ms-engines-num': r => String(r.No_Of_Engines || '').trim(),
+};
+
+// ── Dual range sliders ──────────────────────────────────
+function dateToN(s) { return s ? Math.floor(new Date(s).getTime() / 86400000) : 0; }
+function nToDate(n) { return new Date(n * 86400000).toISOString().slice(0, 10); }
+
+let drDateLo, drDateHi, drYearLo, drYearHi;
+
+function initDualRange(prefix, loVal, hiVal, loFmt, hiFmt) {
+  const lo = document.getElementById(prefix + '-lo');
+  const hi = document.getElementById(prefix + '-hi');
+  const fill = document.getElementById(prefix + '-fill');
+  lo.min = hi.min = loVal; lo.max = hi.max = hiVal;
+  lo.value = loVal; hi.value = hiVal;
+  const updateVisual = () => {
+    let lv = +lo.value, hv = +hi.value;
+    if (lv > hv) { if (document.activeElement === lo) hi.value = hv = lv; else lo.value = lv = hv; }
+    const pct = v => (v - loVal) / (hiVal - loVal) * 100;
+    fill.style.left = pct(lv) + '%'; fill.style.width = (pct(hv) - pct(lv)) + '%';
+    document.getElementById(prefix + '-lo-lbl').textContent = loFmt(lv);
+    document.getElementById(prefix + '-hi-lbl').textContent = hiFmt(hv);
+  };
+  lo.addEventListener('input', () => { updateVisual(); applyFilters(); });
+  hi.addEventListener('input', () => { updateVisual(); applyFilters(); });
+  updateVisual(); // visual only during init — applyFilters() runs at bottom of script
+  return { lo, hi };
+}
+
+function getDualRange(prefix) {
+  return { lo: +document.getElementById(prefix + '-lo').value, hi: +document.getElementById(prefix + '-hi').value };
+}
+
+function resetDualRange(prefix, loVal, hiVal) {
+  document.getElementById(prefix + '-lo').value = loVal;
+  document.getElementById(prefix + '-hi').value = hiVal;
+  // Recompute fill visuals without triggering applyFilters
+  const lo = document.getElementById(prefix + '-lo');
+  const hi = document.getElementById(prefix + '-hi');
+  const fill = document.getElementById(prefix + '-fill');
+  const min = +lo.min, max = +lo.max;
+  const pct = v => (v - min) / (max - min) * 100;
+  fill.style.left = pct(loVal) + '%'; fill.style.width = (pct(hiVal) - pct(loVal)) + '%';
+  const loLbl = document.getElementById(prefix + '-lo-lbl');
+  const hiLbl = document.getElementById(prefix + '-hi-lbl');
+  if (loLbl) loLbl.textContent = prefix === 'dr-year' ? loVal : nToDate(loVal);
+  if (hiLbl) hiLbl.textContent = prefix === 'dr-year' ? hiVal : nToDate(hiVal);
+}
+
+function getFilterState() {
+  const dr = getDualRange('dr-date'), yr = getDualRange('dr-year');
+  return {
+    reg:      getVal('f-reg'),
+    serial:   getVal('f-serial'),
+    owner:    getVal('f-owner'),
+    mfrGroup: getSelected('ms-mfr-group'),
+    mfr:      getSelected('ms-mfr'),
+    model:    getSelected('ms-model'),
+    engine:   getSelected('ms-engine'),
+    purpose:  getSelected('ms-purpose'),
+    province: getSelected('ms-province'),
+    engNum:   getSelected('ms-engines-num'),
+    dateLo: dr.lo, dateHi: dr.hi,
+    yearLo: yr.lo, yearHi: yr.hi,
+  };
+}
+
+function checkRecord(r, s, skipId) {
+  if (s.reg    && !(r.Registration || '').toLowerCase().includes(s.reg))    return false;
+  if (s.serial && !(r.Serial_No    || '').toLowerCase().includes(s.serial)) return false;
+  if (s.owner  && !(r.Owner_Name   || '').toLowerCase().includes(s.owner))  return false;
+  const rd = dateToN(r.Owner_Registered_Since);
+  if (rd && s.dateLo && s.dateHi && (rd < s.dateLo || rd > s.dateHi)) return false;
+  const ry = parseInt(r.Year_of_Manu) || 0;
+  if (ry && s.yearLo && s.yearHi && (ry < s.yearLo || ry > s.yearHi)) return false;
+  if (skipId !== 'ms-mfr-group'   && s.mfrGroup && !s.mfrGroup.has(normMfr(r.Manufacturer)))             return false;
+  if (skipId !== 'ms-mfr'         && s.mfr      && !s.mfr.has((r.Manufacturer || '').trim()))            return false;
+  if (skipId !== 'ms-model'       && s.model     && !s.model.has((r.Model || '').trim()))                 return false;
+  if (skipId !== 'ms-engine'      && s.engine    && !s.engine.has((r.Engine_Type || '').trim()))          return false;
+  if (skipId !== 'ms-purpose'     && s.purpose   && !s.purpose.has((r.Reg_Purpose || '').trim()))        return false;
+  if (skipId !== 'ms-province'    && s.province  && !s.province.has((r.Province || '').trim()))          return false;
+  if (skipId !== 'ms-engines-num' && s.engNum    && !s.engNum.has(String(r.No_Of_Engines || '').trim())) return false;
+  return true;
+}
+
+function applyFilters() {
+  const s = getFilterState();
+
+  // Update each dropdown to show only values relevant given all OTHER active filters
+  Object.entries(MS_FIELD).forEach(([id, fn]) => {
+    const avail = new Set(AIRCRAFT_DATA.filter(r => checkRecord(r, s, id)).map(fn).filter(Boolean));
+    updateMsAvailable(id, avail);
+  });
+
+  // Re-read state after availability update (some checked items may have been hidden/unchecked)
+  const s2 = getFilterState();
+  filtered = AIRCRAFT_DATA.filter(r => checkRecord(r, s2, null));
+
+  // Sort
+  filtered.sort((a, b) => {
+    let av = (a[sortCol] || ''), bv = (b[sortCol] || '');
+    if (!isNaN(av) && !isNaN(bv)) { av = +av; bv = +bv; }
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ?  1 : -1;
+    return 0;
+  });
+
+  currentPage = 1;
+  renderCharts();
+  renderMap();
+  render();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  // Update header styles
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const ths = document.querySelectorAll('thead th');
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country'];
+  const idx = cols.indexOf(col);
+  if (idx >= 0) {
+    ths[idx].classList.add('sorted');
+    ths[idx].querySelector('.sort-arrow').textContent = sortAsc ? '▲' : '▼';
+  }
+  applyFilters();
+}
+
+function render() {
+  const tbody = document.getElementById('tbody');
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  currentPage = Math.min(currentPage, pages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('results-count').innerHTML =
+    `<strong>${total.toLocaleString()}</strong> records found (of ${AIRCRAFT_DATA.length.toLocaleString()} total)`;
+  document.getElementById('page-info').textContent = `Page ${currentPage} of ${pages}`;
+  document.getElementById('btn-prev').disabled = currentPage <= 1;
+  document.getElementById('btn-next').disabled = currentPage >= pages;
+
+  if (slice.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="15" class="empty">No records match the current filters.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = slice.map(r => `
+    <tr>
+      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}')">${esc(r.Registration)}</a></td>
+      <td title="${esc(r.Owner_Name)}">${esc(r.Owner_Name)}</td>
+      <td>${esc(r.Year_of_Manu)}</td>
+      <td title="${esc(r.Manufacturer)}">${esc(r.Manufacturer)}</td>
+      <td title="${esc(r.Model)}">${esc(r.Model)}</td>
+      <td>${esc(r.Serial_No)}</td>
+      <td>${esc(r.Owner_Registered_Since)}</td>
+      <td>${esc(r.Reg_Purpose)}</td>
+      <td style="text-align:center">${esc(r.No_Of_Engines)}</td>
+      <td>${esc(r.Engine_Type)}</td>
+      <td title="${esc(r.Address)}">${esc(r.Address)}</td>
+      <td title="${esc(r.City)}">${esc(r.City)}</td>
+      <td>${esc(r.Province)}</td>
+      <td>${esc(r.Postal_Code)}</td>
+      <td>${esc(r.Country)}</td>
+    </tr>`).join('');
+}
+
+function changePage(dir) {
+  currentPage += dir;
+  render();
+}
+
+// ── Charts ──────────────────────────────────────────────
+const KNOWN_MFRS = new Set(['Piper','Cessna','Diamond','Tecnam','QUEST','Beech','Cirrus','Mooney']);
+function normMfr(name) {
+  const m = (name || '').trim();
+  return KNOWN_MFRS.has(m) ? m : 'Other';
+}
+
+const MFR_COLORS = [
+  '#e8b84b','#4a7fc4','#4caf50','#e9a0b8',
+  '#f0813a','#9b7bc4','#5bc4bf','#e05c5c',
+  '#7cb8e8','#a8c97a','#f4a261','#c77dff',
+  '#80b3ff','#f7c59f','#b5e48c'
+];
+const mfrColorMap = {};
+let mfrColorIdx = 0;
+function mfrColor(name) {
+  if (!mfrColorMap[name]) mfrColorMap[name] = MFR_COLORS[mfrColorIdx++ % MFR_COLORS.length];
+  return mfrColorMap[name];
+}
+
+let ownerSortKey = 'count';
+let ownerSortAsc = false;
+
+function sortOwner(key) {
+  if (ownerSortKey === key) ownerSortAsc = !ownerSortAsc;
+  else { ownerSortKey = key; ownerSortAsc = key !== 'count'; }
+  renderCharts();
+}
+
+function renderCharts() {
+  // ── By Owner ──
+  const ownerMap = {};
+  filtered.forEach(r => {
+    const key = (r.Owner_Name || '').trim() || '(unknown)';
+    if (!ownerMap[key]) ownerMap[key] = { name: key, province: (r.Province || '').trim(), date: '', count: 0 };
+    ownerMap[key].count++;
+    const d = (r.Owner_Registered_Since || '').trim();
+    if (d && d > ownerMap[key].date) ownerMap[key].date = d;
+  });
+
+  let owners = Object.values(ownerMap);
+  owners.sort((a, b) => {
+    let av = a[ownerSortKey === 'count' ? 'count' : ownerSortKey === 'date' ? 'date' : 'name'];
+    let bv = b[ownerSortKey === 'count' ? 'count' : ownerSortKey === 'date' ? 'date' : 'name'];
+    if (av < bv) return ownerSortAsc ? -1 : 1;
+    if (av > bv) return ownerSortAsc ?  1 : -1;
+    return 0;
+  });
+
+  const top50 = owners.slice(0, 50);
+  document.getElementById('owner-tbody').innerHTML = top50.map(o => `
+    <tr>
+      <td title="${esc(o.name)}">${esc(o.name)}</td>
+      <td class="province">${esc(o.province) || '<span style="color:#bbb">Null</span>'}</td>
+      <td>${esc(o.date)}</td>
+      <td class="count">${o.count}</td>
+    </tr>`).join('');
+
+  // ── By Manufacturer ──
+  const mfrMap = {};
+  filtered.forEach(r => {
+    const m = normMfr(r.Manufacturer);
+    mfrMap[m] = (mfrMap[m] || 0) + 1;
+  });
+  let mfrs = Object.entries(mfrMap).sort((a,b) => b[1]-a[1]).slice(0, 15);
+  const maxCount = mfrs[0]?.[1] || 1;
+
+  document.getElementById('mfr-list').innerHTML = mfrs.map(([name, count]) => `
+    <div class="mfr-row">
+      <div class="mfr-name" title="${esc(name)}">${esc(name)}</div>
+      <div class="mfr-bar-wrap">
+        <div class="mfr-bar" style="width:${(count/maxCount*100).toFixed(1)}%;background:${mfrColor(name)}"></div>
+      </div>
+      <div class="mfr-count">${count.toLocaleString()}</div>
+    </div>`).join('');
+}
+
+function clearFilters() {
+  ['f-reg','f-serial','f-owner'].forEach(id => document.getElementById(id).value = '');
+  ['ms-mfr-group','ms-mfr','ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
+  resetDualRange('dr-date', minDate, maxDate);
+  resetDualRange('dr-year', minYear, maxYear);
+  applyFilters();
+}
+
+// ── Map coord lookups ───────────────────────────────────
+const ZIP2_COORDS = {}, ZIP1_COORDS = {};
+(function() {
+  const tmp2 = {}, tmp1 = {};
+  Object.entries(FSA_COORDS).forEach(([fsa, [la, lo]]) => {
+    const k2 = fsa.slice(0,2), k1 = fsa.slice(0,1);
+    if (!tmp2[k2]) tmp2[k2] = [0,0,0];
+    tmp2[k2][0]+=la; tmp2[k2][1]+=lo; tmp2[k2][2]++;
+    if (!tmp1[k1]) tmp1[k1] = [0,0,0];
+    tmp1[k1][0]+=la; tmp1[k1][1]+=lo; tmp1[k1][2]++;
+  });
+  Object.entries(tmp2).forEach(([k,[la,lo,n]]) => ZIP2_COORDS[k]=[la/n,lo/n]);
+  Object.entries(tmp1).forEach(([k,[la,lo,n]]) => ZIP1_COORDS[k]=[la/n,lo/n]);
+})();
+
+const PROVINCE_COORDS = {
+  'British Columbia':           [54.0, -124.8],
+  'Alberta':                    [54.5, -114.5],
+  'Saskatchewan':               [54.5, -105.5],
+  'Manitoba':                   [54.5,  -97.5],
+  'Ontario':                    [50.0,  -85.5],
+  'Quebec':                     [52.5,  -71.5],
+  'New Brunswick':              [46.5,  -66.5],
+  'Nova Scotia':                [45.0,  -63.0],
+  'Prince Edward Island':       [46.4,  -63.1],
+  'Newfoundland and Labrador':  [53.5,  -59.5],
+  'Newfoundland':               [53.5,  -59.5],
+  'Yukon':                      [64.0, -135.0],
+  'Northwest Territories':      [65.0, -117.0],
+  'Nunavut':                    [70.0,  -86.0],
+};
+
+let mapGroupBy = 'zip3';
+
+function setGroup(mode) {
+  mapGroupBy = mode;
+  document.querySelectorAll('.grp-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('grp-' + mode).classList.add('active');
+  renderMap();
+}
+
+// ── Map ─────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true }).setView([56, -96], 4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OSM',
+  maxZoom: 18
+}).addTo(map);
+
+const markerLayer = L.layerGroup().addTo(map);
+
+function markerRadius(count, maxCount) {
+  const minR = 4, maxR = 22;
+  if (!maxCount || maxCount <= 1) return minR;
+  return minR + (maxR - minR) * Math.sqrt(count / maxCount);
+}
+
+function makePieIcon(mfrCounts, totalCount, maxCount) {
+  const r = markerRadius(totalCount, maxCount);
+  const pad = 1;
+  const size = (r + pad) * 2;
+  const cx = r + pad, cy = r + pad;
+  const entries = Object.entries(mfrCounts).sort((a, b) => b[1] - a[1]);
+  let svg = `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">`;
+
+  if (entries.length === 1) {
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${mfrColor(entries[0][0])}" stroke="white" stroke-width="1" opacity="0.85"/>`;
+  } else {
+    let angle = -Math.PI / 2;
+    entries.forEach(([mfr, cnt]) => {
+      const slice = (cnt / totalCount) * 2 * Math.PI;
+      const end = angle + slice;
+      const x1 = (cx + r * Math.cos(angle)).toFixed(3);
+      const y1 = (cy + r * Math.sin(angle)).toFixed(3);
+      const x2 = (cx + r * Math.cos(end)).toFixed(3);
+      const y2 = (cy + r * Math.sin(end)).toFixed(3);
+      const large = slice > Math.PI ? 1 : 0;
+      svg += `<path d="M${cx},${cy}L${x1},${y1}A${r},${r},0,${large},1,${x2},${y2}Z" fill="${mfrColor(mfr)}" stroke="white" stroke-width="0.5" opacity="0.85"/>`;
+      angle = end;
+    });
+  }
+  svg += `</svg>`;
+  return L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [cx, cy] });
+}
+
+function renderMap() {
+  markerLayer.clearLayers();
+
+  // Choose key extractor and coord lookup based on grouping mode
+  let keyFn, coordMap;
+  if (mapGroupBy === 'province') {
+    keyFn = r => (r.Province || '').trim();
+    coordMap = PROVINCE_COORDS;
+  } else if (mapGroupBy === 'zip1') {
+    keyFn = r => (r.Postal_Code || '').trim().slice(0,1).toUpperCase();
+    coordMap = ZIP1_COORDS;
+  } else if (mapGroupBy === 'zip2') {
+    keyFn = r => (r.Postal_Code || '').trim().slice(0,2).toUpperCase();
+    coordMap = ZIP2_COORDS;
+  } else {
+    keyFn = r => (r.Postal_Code || '').trim().slice(0,3).toUpperCase();
+    coordMap = FSA_COORDS;
+  }
+
+  const groups = {};
+  filtered.forEach(r => {
+    const key = keyFn(r);
+    if (!key || !coordMap[key]) return;
+    if (!groups[key]) groups[key] = { count: 0, mfrCounts: {} };
+    groups[key].count++;
+    const m = normMfr(r.Manufacturer);
+    groups[key].mfrCounts[m] = (groups[key].mfrCounts[m] || 0) + 1;
+  });
+
+  const maxCount = Math.max(...Object.values(groups).map(g => g.count), 1);
+  const boundsArr = [];
+
+  Object.entries(groups).forEach(([key, info]) => {
+    const [lat, lon] = coordMap[key];
+    boundsArr.push([lat, lon]);
+    const sorted = Object.entries(info.mfrCounts).sort((a,b) => b[1]-a[1]);
+    const tipRows = sorted.map(([m, c]) =>
+      `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${mfrColor(m)};margin-right:4px"></span>${m}: ${c}`
+    ).join('<br>');
+    L.marker([lat, lon], { icon: makePieIcon(info.mfrCounts, info.count, maxCount) })
+      .bindTooltip(`<b>${key}</b> — ${info.count} aircraft<br>${tipRows}`, { sticky: true })
+      .addTo(markerLayer);
+  });
+
+  if (boundsArr.length > 0) {
+    try { map.fitBounds(L.latLngBounds(boundsArr), { padding: [24, 24], maxZoom: 12 }); }
+    catch(e) {}
+  }
+}
+
+// Initial load
+applyFilters();
+</script>
+</body>
+</html>
