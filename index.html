@@ -299,7 +299,7 @@
     font-size: 12px;
   }
   .owner-table thead th {
-    background: none;
+    background: #f8f9fb;
     border: none;
     border-bottom: 1px solid #dde1e7;
     padding: 4px 8px;
@@ -309,31 +309,38 @@
     font-size: 11px;
     cursor: pointer;
     white-space: nowrap;
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
   .owner-table thead th:hover { color: #1a3a5c; }
-  .owner-table tbody tr { border-bottom: 1px solid #f0f2f5; }
+  .owner-table tbody tr { border-bottom: 1px solid #f0f2f5; cursor: pointer; }
   .owner-table tbody tr:hover { background: #f5f8ff; }
-  .owner-table td {
+  .owner-table tbody tr.chart-active { background: #dbeafe !important; }
+  .owner-table tbody tr.chart-active td { font-weight: 600; }
+  .owner-table td, .owner-table th {
     padding: 4px 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
   }
-  .owner-table td.province { color: #2563c7; }
-  .owner-table td.count {
+  .owner-table td.name, .owner-table th.name { width: auto; max-width: 160px; }
+  .owner-table td.province, .owner-table th.province { width: 110px; max-width: 110px; color: #444; }
+  .owner-table td.date, .owner-table th.date { width: 84px; max-width: 84px; }
+  .owner-table td.count, .owner-table th.count {
     text-align: right;
     font-weight: 600;
     color: #555;
-    width: 36px;
-    max-width: 36px;
+    width: 32px;
+    max-width: 32px;
   }
   .owner-scroll { flex: 1; overflow-y: auto; }
 
   /* By Manufacturer bars */
   .mfr-list { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; overflow-y: auto; flex: 1; }
-  .mfr-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .mfr-row { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; border-radius: 4px; padding: 2px 4px; }
+  .mfr-row:hover { background: #f5f8ff; }
+  .mfr-row.chart-active { background: #dbeafe; }
   .mfr-name { width: 70px; text-align: right; flex-shrink: 0; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
   .mfr-bar-wrap { flex: 1; background: #f0f2f5; border-radius: 3px; height: 16px; overflow: hidden; }
   .mfr-bar { height: 100%; border-radius: 3px; transition: width .3s ease; }
@@ -446,9 +453,8 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS</span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a></span>
   </div>
-  <button class="update-btn" onclick="document.getElementById('update-modal').classList.add('open')">&#8635; Update Data</button>
 </header>
 
 <div id="update-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
@@ -593,12 +599,6 @@
 
   <button class="btn-clear" onclick="clearFilters()">Clear</button>
 
-  <div class="filter-dl-link">
-    Register download:<br>
-    <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank">
-      https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx
-    </a>
-  </div>
 </div>
 
 <div class="panels-row">
@@ -606,18 +606,16 @@
   <!-- By Owner -->
   <div class="side-panel panel-owner">
     <h3>By Owner</h3>
-    <table class="owner-table">
-      <thead>
-        <tr>
-          <th onclick="sortOwner('name')">Owner Name ⇅</th>
-          <th onclick="sortOwner('province')">Province</th>
-          <th onclick="sortOwner('date')">Latest Register</th>
-          <th onclick="sortOwner('count')"></th>
-        </tr>
-      </thead>
-    </table>
     <div class="owner-scroll">
       <table class="owner-table">
+        <thead>
+          <tr>
+            <th class="name" onclick="sortOwner('name')">Owner Name ⇅</th>
+            <th class="province" onclick="sortOwner('province')">Province</th>
+            <th class="date" onclick="sortOwner('date')">Latest Register</th>
+            <th class="count" onclick="sortOwner('count')"></th>
+          </tr>
+        </thead>
         <tbody id="owner-tbody"></tbody>
       </table>
     </div>
@@ -687,7 +685,7 @@
 const PAGE_SIZE = 100;
 let filtered = [];
 let currentPage = 1;
-let sortCol = 'Registration';
+let sortCol = null;
 let sortAsc = true;
 
 // Show data date in update modal
@@ -947,6 +945,9 @@ function getFilterState() {
     engNum:   getSelected('ms-engines-num'),
     dateLo: dr.lo, dateHi: dr.hi,
     yearLo: yr.lo, yearHi: yr.hi,
+    chartOwner: activeOwnerFilter,
+    chartMfr:   activeMfrFilter,
+    chartMap:   activeMapFilter,
   };
 }
 
@@ -965,6 +966,17 @@ function checkRecord(r, s, skipId) {
   if (skipId !== 'ms-purpose'     && s.purpose   && !s.purpose.has((r.Reg_Purpose || '').trim()))        return false;
   if (skipId !== 'ms-province'    && s.province  && !s.province.has((r.Province || '').trim()))          return false;
   if (skipId !== 'ms-engines-num' && s.engNum    && !s.engNum.has(String(r.No_Of_Engines || '').trim())) return false;
+  if (s.chartOwner && (r.Owner_Name || '').trim() !== s.chartOwner) return false;
+  if (s.chartMfr   && normMfr(r.Manufacturer)    !== s.chartMfr)   return false;
+  if (s.chartMap) {
+    const { key, groupBy } = s.chartMap;
+    let rKey;
+    if      (groupBy === 'province') rKey = (r.Province    || '').trim();
+    else if (groupBy === 'zip1')     rKey = (r.Postal_Code || '').trim().slice(0,1).toUpperCase();
+    else if (groupBy === 'zip2')     rKey = (r.Postal_Code || '').trim().slice(0,2).toUpperCase();
+    else                             rKey = (r.Postal_Code || '').trim().slice(0,3).toUpperCase();
+    if (rKey !== key) return false;
+  }
   return true;
 }
 
@@ -992,13 +1004,15 @@ function applyFilters() {
   filtered = AIRCRAFT_DATA.filter(r => checkRecord(r, s2, null));
 
   // Sort
-  filtered.sort((a, b) => {
-    let av = (a[sortCol] || ''), bv = (b[sortCol] || '');
-    if (!isNaN(av) && !isNaN(bv)) { av = +av; bv = +bv; }
-    if (av < bv) return sortAsc ? -1 : 1;
-    if (av > bv) return sortAsc ?  1 : -1;
-    return 0;
-  });
+  if (sortCol) {
+    filtered.sort((a, b) => {
+      let av = (a[sortCol] || ''), bv = (b[sortCol] || '');
+      if (!isNaN(av) && !isNaN(bv)) { av = +av; bv = +bv; }
+      if (av < bv) return sortAsc ? -1 : 1;
+      if (av > bv) return sortAsc ?  1 : -1;
+      return 0;
+    });
+  }
 
   currentPage = 1;
   renderCharts();
@@ -1007,16 +1021,27 @@ function applyFilters() {
 }
 
 function sortBy(col) {
-  if (sortCol === col) sortAsc = !sortAsc;
-  else { sortCol = col; sortAsc = true; }
-  // Update header styles
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
-  const ths = document.querySelectorAll('thead th');
+  if (sortCol === col) {
+    if (sortAsc) { sortAsc = false; }          // 2nd click: Z→A
+    else         { sortCol = null; }            // 3rd click: remove sort
+  } else {
+    sortCol = col; sortAsc = true;              // 1st click on new col: A→Z
+  }
+  // Update header styles (scope to main table only, not owner table)
+  const ths = document.querySelectorAll('.table-wrap thead th');
   const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country'];
-  const idx = cols.indexOf(col);
-  if (idx >= 0) {
-    ths[idx].classList.add('sorted');
-    ths[idx].querySelector('.sort-arrow').textContent = sortAsc ? '▲' : '▼';
+  ths.forEach(th => {
+    th.classList.remove('sorted');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = '⇅';
+  });
+  if (sortCol) {
+    const idx = cols.indexOf(sortCol);
+    if (idx >= 0) {
+      ths[idx].classList.add('sorted');
+      const arrow = ths[idx].querySelector('.sort-arrow');
+      if (arrow) arrow.textContent = sortAsc ? '▲' : '▼';
+    }
   }
   applyFilters();
 }
@@ -1087,11 +1112,24 @@ function mfrColor(name) {
 
 let ownerSortKey = 'count';
 let ownerSortAsc = false;
+let activeOwnerFilter = null;   // owner name string or null
+let activeMfrFilter   = null;   // normMfr name string or null
+let activeMapFilter   = null;   // { key, groupBy } or null
 
 function sortOwner(key) {
   if (ownerSortKey === key) ownerSortAsc = !ownerSortAsc;
   else { ownerSortKey = key; ownerSortAsc = key !== 'count'; }
   renderCharts();
+}
+
+function clickOwnerRow(name) {
+  activeOwnerFilter = activeOwnerFilter === name ? null : name;
+  applyFilters();
+}
+
+function clickMfrRow(name) {
+  activeMfrFilter = activeMfrFilter === name ? null : name;
+  applyFilters();
 }
 
 function renderCharts() {
@@ -1117,10 +1155,10 @@ function renderCharts() {
 
   const top50 = owners.slice(0, 50);
   document.getElementById('owner-tbody').innerHTML = top50.map(o => `
-    <tr>
-      <td title="${esc(o.name)}">${esc(o.name)}</td>
+    <tr onclick="clickOwnerRow('${esc(o.name).replace(/'/g,"&#39;")}')" class="${activeOwnerFilter === o.name ? 'chart-active' : ''}">
+      <td class="name" title="${esc(o.name)}">${esc(o.name)}</td>
       <td class="province">${esc(o.province) || '<span style="color:#bbb">Null</span>'}</td>
-      <td>${esc(o.date)}</td>
+      <td class="date">${esc(o.date)}</td>
       <td class="count">${o.count}</td>
     </tr>`).join('');
 
@@ -1135,7 +1173,7 @@ function renderCharts() {
   const maxCount = mfrs[0]?.[1] || 1;
 
   document.getElementById('mfr-list').innerHTML = mfrs.map(([name, count]) => `
-    <div class="mfr-row">
+    <div class="mfr-row ${activeMfrFilter === name ? 'chart-active' : ''}" onclick="clickMfrRow('${esc(name).replace(/'/g,"&#39;")}')">
       <div class="mfr-name" title="${esc(name)}">${esc(name)}</div>
       <div class="mfr-bar-wrap">
         <div class="mfr-bar" style="width:${(count/maxCount*100).toFixed(1)}%;background:${mfrColor(name)}"></div>
@@ -1149,6 +1187,9 @@ function clearFilters() {
   ['ms-mfr-group','ms-mfr','ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
   resetDualRange('dr-date', minDate, maxDate);
   resetDualRange('dr-year', minYear, maxYear);
+  activeOwnerFilter = null;
+  activeMfrFilter   = null;
+  activeMapFilter   = null;
   applyFilters();
 }
 
@@ -1208,9 +1249,9 @@ function markerRadius(count, maxCount) {
   return minR + (maxR - minR) * Math.sqrt(count / maxCount);
 }
 
-function makePieIcon(mfrCounts, totalCount, maxCount) {
+function makePieIcon(mfrCounts, totalCount, maxCount, active) {
   const r = markerRadius(totalCount, maxCount);
-  const pad = 1;
+  const pad = active ? 3 : 1;
   const size = (r + pad) * 2;
   const cx = r + pad, cy = r + pad;
   const entries = Object.entries(mfrCounts).sort((a, b) => b[1] - a[1]);
@@ -1232,6 +1273,7 @@ function makePieIcon(mfrCounts, totalCount, maxCount) {
       angle = end;
     });
   }
+  if (active) svg += `<circle cx="${cx}" cy="${cy}" r="${r + 1.5}" fill="none" stroke="#1a3a5c" stroke-width="2.5" opacity="0.9"/>`;
   svg += `</svg>`;
   return L.divIcon({ html: svg, className: '', iconSize: [size, size], iconAnchor: [cx, cy] });
 }
@@ -1282,9 +1324,15 @@ function renderMap() {
     const tipRows = sorted.map(([m, c]) =>
       `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${mfrColor(m)};margin-right:4px"></span>${m}: ${c}`
     ).join('<br>');
-    L.marker([lat, lon], { icon: makePieIcon(info.mfrCounts, info.count, maxCount) })
-      .bindTooltip(`<b>${key}</b> — ${info.count} aircraft<br>${tipRows}`, { sticky: true })
-      .addTo(markerLayer);
+    const isActive = activeMapFilter && activeMapFilter.key === key && activeMapFilter.groupBy === mapGroupBy;
+    const marker = L.marker([lat, lon], { icon: makePieIcon(info.mfrCounts, info.count, maxCount, isActive) })
+      .bindTooltip(`<b>${key}</b> — ${info.count} aircraft<br>${tipRows}`, { sticky: true });
+    marker.on('click', () => {
+      activeMapFilter = (activeMapFilter && activeMapFilter.key === key && activeMapFilter.groupBy === mapGroupBy)
+        ? null : { key, groupBy: mapGroupBy };
+      applyFilters();
+    });
+    marker.addTo(markerLayer);
   });
 
   if (boundsArr.length > 0) {
