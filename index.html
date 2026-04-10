@@ -453,7 +453,7 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a></span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.0 &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a> &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span></span>
   </div>
 </header>
 
@@ -650,6 +650,7 @@
     <span id="page-info"></span>
     <button id="btn-next" onclick="changePage(1)">Next &#8594;</button>
   </div>
+  <button class="btn-clear" onclick="exportCsv()" title="Export filtered results to Excel/CSV">&#8595; Export</button>
 </div>
 
 <div class="table-wrap">
@@ -688,10 +689,12 @@ let currentPage = 1;
 let sortCol = null;
 let sortAsc = true;
 
-// Show data date in update modal
+// Show data date in header and update modal
 if (typeof DATA_DATE !== 'undefined') {
   const el = document.getElementById('data-date-note');
   if (el) el.textContent = 'Current data: ' + DATA_DATE;
+  const lu = document.getElementById('last-updated');
+  if (lu) lu.textContent = DATA_DATE;
 }
 
 // ── Multi-select ────────────────────────────────────────
@@ -1339,6 +1342,27 @@ function renderMap() {
     try { map.fitBounds(L.latLngBounds(boundsArr), { padding: [24, 24], maxZoom: 12 }); }
     catch(e) {}
   }
+}
+
+function exportCsv() {
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No',
+    'Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type',
+    'Address','City','Province','Postal_Code','Country'];
+  const headers = ['Registration','Owner Name','Year of Manu','Manufacturer','Model','Serial No',
+    'Owner Registered Since','Reg Purpose','No Of Engines','Engine Type',
+    'Address','City','Province','Postal Code','Country'];
+  const esc = v => {
+    const s = v == null ? '' : String(v);
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+  const rows = [headers.join(',')];
+  filtered.forEach(r => rows.push(cols.map(c => esc(r[c])).join(',')));
+  const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ccarcs_${(DATA_DATE || 'export').replace(/-/g,'')}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // Initial load
