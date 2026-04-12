@@ -55,7 +55,7 @@
     font-size: 12px;
     height: 30px;
     background: #fff;
-    min-width: 120px;
+    width: 130px;
     outline: none;
   }
   .filter-group input:focus {
@@ -291,6 +291,8 @@
     border-bottom: 1px solid #eee;
     flex-shrink: 0;
   }
+
+  .chart-hint { font-size: 10px; font-weight: 400; color: #aaa; letter-spacing: 0; text-transform: none; margin-left: 4px; }
 
   /* By Owner table */
   .owner-table {
@@ -605,7 +607,7 @@
 
   <!-- By Owner -->
   <div class="side-panel panel-owner">
-    <h3>By Owner</h3>
+    <h3>By Owner <span class="chart-hint">click to filter</span></h3>
     <div class="owner-scroll">
       <table class="owner-table">
         <thead>
@@ -623,7 +625,7 @@
 
   <!-- By Manufacturer -->
   <div class="side-panel panel-mfr">
-    <h3>By Manufacturer</h3>
+    <h3>By Manufacturer <span class="chart-hint">click to filter</span></h3>
     <div class="mfr-list" id="mfr-list"></div>
   </div>
 
