@@ -136,6 +136,15 @@
     padding-bottom: 4px;
     margin-bottom: 1px;
   }
+  .mfr-expand-btn {
+    margin-left: 5px; padding: 0 5px; font-size: 10px; line-height: 15px;
+    border: 1px solid #ccd0d9; border-radius: 3px; background: #f5f7fa;
+    cursor: pointer; color: #555; flex-shrink: 0;
+  }
+  .mfr-expand-btn:hover { background: #e8f0fe; color: #2563c7; }
+  .mfr-sub-wrap { display: none; border-top: 1px solid #f0f0f0; }
+  .mfr-sub-wrap.open { display: block; }
+  .ms-opt-child { padding-left: 22px; font-size: 11px; color: #444; }
   .ms-btns {
     display: flex;
     gap: 5px;
@@ -515,19 +524,12 @@
   </div>
 
   <div class="filter-row">
-    <!-- Row 2: Manufacturer* | Manufacturer -->
+    <!-- Row 2: Manufacturer (hierarchical) -->
     <div class="filter-group">
-      <label>Manufacturer*</label>
+      <label>Manufacturer</label>
       <details class="ms-drop" id="ms-mfr-group">
         <summary id="ms-mfr-group-sum">All</summary>
         <div class="ms-options" id="ms-mfr-group-opts"></div>
-      </details>
-    </div>
-    <div class="filter-group">
-      <label>Manufacturer</label>
-      <details class="ms-drop" id="ms-mfr">
-        <summary id="ms-mfr-sum">All</summary>
-        <div class="ms-options" id="ms-mfr-opts"></div>
       </details>
     </div>
   </div>
@@ -709,11 +711,13 @@ if (typeof DATA_DATE !== 'undefined') {
 
 // ── Multi-select ────────────────────────────────────────
 const KNOWN_MFR_LIST = ['Cessna','Piper','Beech','Cirrus','Diamond','Mooney','QUEST','Tecnam'];
-const MS_DEFAULTS = { 'ms-mfr-group': new Set(KNOWN_MFR_LIST) }; // Other excluded by default
+const KNOWN_MFRS = new Set(KNOWN_MFR_LIST);
+const MS_DEFAULTS = {};
 
 const esc = s => (s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
 
 function itemBoxes(id) {
+  if (id === 'ms-mfr-group') return [...mfrKnownBoxes, ...mfrOtherBoxes];
   return [...document.querySelectorAll(`#${id}-opts input[type="checkbox"]:not(#${id}-all)`)];
 }
 
@@ -756,6 +760,7 @@ function msToggleAll(id, checked) {
 function msChanged(id) { syncAllBox(id); updateMsLabel(id); }
 
 function msCancel(id) {
+  if (id === 'ms-mfr-group') { mfrCancel(); return; }
   const saved = msSavedState[id];
   if (saved) { itemBoxes(id).forEach((b, i) => { b.checked = !!saved[i]; }); delete msSavedState[id]; }
   const s = document.getElementById(id + '-search');
@@ -774,6 +779,7 @@ function msApply(id) {
 }
 
 function msSearch(id, q) {
+  if (id === 'ms-mfr-group') { mfrSearch(q); return; }
   const query = (q || '').toLowerCase();
   itemBoxes(id).forEach(b => {
     const lbl = b.closest('label');
@@ -793,6 +799,7 @@ function syncAllBox(id) {
 }
 
 function updateMsLabel(id) {
+  if (id === 'ms-mfr-group') { updateMfrLabel(); return; }
   const avail = itemBoxes(id).filter(b => b.closest('label').dataset.avail !== '0');
   const checked = avail.filter(b => b.checked);
   const sumEl = document.getElementById(id + '-sum');
@@ -820,6 +827,7 @@ function resetMs(id) {
 }
 
 function updateMsAvailable(id, availableSet) {
+  if (id === 'ms-mfr-group') { updateMfrHierarchyAvail(availableSet); return; }
   itemBoxes(id).forEach(b => {
     const avail = availableSet.has(b.value);
     const lbl = b.closest('label');
@@ -834,9 +842,195 @@ function uniqueVals(key) {
   return [...new Set(AIRCRAFT_DATA.map(r => r[key] == null ? '' : String(r[key]).trim()))].filter(Boolean).sort();
 }
 
+// ── Hierarchical manufacturer filter ────────────────────
+let mfrKnownBoxes = [], mfrOtherParentBox = null, mfrOtherBoxes = [];
+
+function initMfrHierarchy() {
+  const id = 'ms-mfr-group';
+  const otherMfrs = uniqueVals('Manufacturer').filter(m => !KNOWN_MFRS.has(m));
+  const opts = document.getElementById(id + '-opts');
+  opts.innerHTML =
+    `<div class="ms-search-wrap"><input type="text" class="ms-search" id="${id}-search" placeholder="Enter search text"></div>` +
+    `<div class="ms-items-scroll" id="${id}-scroll">` +
+      `<label class="ms-opt ms-all-opt"><input type="checkbox" id="${id}-all"> (All)</label>` +
+      KNOWN_MFR_LIST.map(m =>
+        `<label class="ms-opt"><input type="checkbox" data-kind="known" value="${esc(m)}" checked>${esc(m)}</label>`
+      ).join('') +
+      `<label class="ms-opt" id="mfr-other-row"><input type="checkbox" id="mfr-other-cb">Other` +
+        `<button type="button" class="mfr-expand-btn" id="mfr-expand-btn">+</button></label>` +
+      `<div class="mfr-sub-wrap" id="mfr-sub-wrap">` +
+        otherMfrs.map(m =>
+          `<label class="ms-opt ms-opt-child"><input type="checkbox" data-kind="other-sub" value="${esc(m)}">${esc(m)}</label>`
+        ).join('') +
+      `</div>` +
+    `</div>` +
+    `<div class="ms-btns"><button type="button" onclick="mfrCancel()">Cancel</button>` +
+      `<button type="button" class="ms-apply" onclick="mfrApply()">Apply</button></div>`;
+
+  mfrKnownBoxes     = [...opts.querySelectorAll('input[data-kind="known"]')];
+  mfrOtherParentBox = document.getElementById('mfr-other-cb');
+  mfrOtherBoxes     = [...opts.querySelectorAll('input[data-kind="other-sub"]')];
+
+  // Expand/collapse sub-group
+  const expandBtn = document.getElementById('mfr-expand-btn');
+  const subWrap   = document.getElementById('mfr-sub-wrap');
+  expandBtn.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    const open = subWrap.classList.toggle('open');
+    expandBtn.textContent = open ? '−' : '+';
+  });
+
+  // Other parent: sync sub-items
+  mfrOtherParentBox.addEventListener('change', () => {
+    const checked = mfrOtherParentBox.checked;
+    mfrOtherBoxes.forEach(b => { if (b.closest('label').dataset.avail !== '0') b.checked = checked; });
+    mfrOtherParentBox.indeterminate = false;
+    syncAllBox(id); updateMfrLabel();
+  });
+
+  // Sub-items: sync Other parent
+  mfrOtherBoxes.forEach(b => b.addEventListener('change', () => {
+    syncMfrOtherParent(); syncAllBox(id); updateMfrLabel();
+  }));
+
+  // Known manufacturers
+  mfrKnownBoxes.forEach(b => b.addEventListener('change', () => {
+    syncAllBox(id); updateMfrLabel();
+  }));
+
+  // All checkbox
+  document.getElementById(id + '-all').addEventListener('change', function() {
+    const checked = this.checked;
+    mfrKnownBoxes.forEach(b => { if (b.closest('label').dataset.avail !== '0') b.checked = checked; });
+    mfrOtherBoxes.forEach(b => { if (b.closest('label').dataset.avail !== '0') b.checked = checked; });
+    if (mfrOtherParentBox.closest('label').dataset.avail !== '0') {
+      mfrOtherParentBox.checked = checked; mfrOtherParentBox.indeterminate = false;
+    }
+    updateMfrLabel();
+  });
+
+  // Search
+  const searchEl = document.getElementById(id + '-search');
+  searchEl.addEventListener('input', () => mfrSearch(searchEl.value));
+  searchEl.addEventListener('click', e => e.stopPropagation());
+
+  // Save state on open; close other dropdowns
+  document.getElementById(id).addEventListener('toggle', function() {
+    if (this.open) {
+      document.querySelectorAll('details.ms-drop[open]').forEach(d => { if (d.id !== id) msCancel(d.id); });
+      msSavedState[id] = itemBoxes(id).map(b => b.checked);
+    }
+  });
+
+  syncAllBox(id); updateMfrLabel();
+}
+
+function syncMfrOtherParent() {
+  const avail = mfrOtherBoxes.filter(b => b.closest('label').dataset.avail !== '0');
+  if (avail.length === 0) { mfrOtherParentBox.checked = false; mfrOtherParentBox.indeterminate = false; return; }
+  const n = avail.filter(b => b.checked).length;
+  mfrOtherParentBox.checked = n === avail.length;
+  mfrOtherParentBox.indeterminate = n > 0 && n < avail.length;
+}
+
+function updateMfrLabel() {
+  const availKnown  = mfrKnownBoxes.filter(b => b.closest('label').dataset.avail !== '0');
+  const availOther  = mfrOtherBoxes.filter(b => b.closest('label').dataset.avail !== '0');
+  const total       = availKnown.length + availOther.length;
+  const checked     = availKnown.filter(b => b.checked).length + availOther.filter(b => b.checked).length;
+  const sumEl = document.getElementById('ms-mfr-group-sum');
+  if (sumEl) sumEl.textContent = (checked === 0 || checked === total) ? 'All' : checked + ' selected';
+}
+
+function mfrSearch(q) {
+  const query = (q || '').toLowerCase();
+  mfrKnownBoxes.forEach(b => {
+    const lbl = b.closest('label');
+    if (lbl.dataset.avail === '0') { lbl.style.display = 'none'; return; }
+    lbl.style.display = (!query || b.value.toLowerCase().includes(query)) ? '' : 'none';
+  });
+  let anyOtherVisible = false;
+  mfrOtherBoxes.forEach(b => {
+    const lbl = b.closest('label');
+    if (lbl.dataset.avail === '0') { lbl.style.display = 'none'; return; }
+    const vis = !query || b.value.toLowerCase().includes(query);
+    lbl.style.display = vis ? '' : 'none';
+    if (vis) anyOtherVisible = true;
+  });
+  const otherRow = document.getElementById('mfr-other-row');
+  if (otherRow) otherRow.style.display = anyOtherVisible ? '' : 'none';
+  syncAllBox('ms-mfr-group');
+}
+
+function updateMfrHierarchyAvail(availRaw) {
+  mfrKnownBoxes.forEach(b => {
+    const av = availRaw.has(b.value);
+    const lbl = b.closest('label');
+    lbl.dataset.avail = av ? '1' : '0'; lbl.style.display = av ? '' : 'none';
+  });
+  let anyOtherAvail = false;
+  mfrOtherBoxes.forEach(b => {
+    const av = availRaw.has(b.value);
+    const lbl = b.closest('label');
+    lbl.dataset.avail = av ? '1' : '0'; lbl.style.display = av ? '' : 'none';
+    if (av) anyOtherAvail = true;
+  });
+  const otherLbl = mfrOtherParentBox.closest('label');
+  otherLbl.dataset.avail = anyOtherAvail ? '1' : '0';
+  otherLbl.style.display = anyOtherAvail ? '' : 'none';
+  syncMfrOtherParent(); syncAllBox('ms-mfr-group'); updateMfrLabel();
+}
+
+function getMfrSel() {
+  const eff = new Set();
+  let total = 0;
+  mfrKnownBoxes.forEach(b => {
+    if (b.closest('label').dataset.avail === '0') return;
+    total++;
+    if (b.checked) eff.add(b.value);
+  });
+  mfrOtherBoxes.forEach(b => {
+    if (b.closest('label').dataset.avail === '0') return;
+    total++;
+    if (b.checked) eff.add(b.value);
+  });
+  if (total === 0 || eff.size === 0 || eff.size === total) return null;
+  return eff;
+}
+
+function resetMfrHierarchy() {
+  mfrKnownBoxes.forEach(b => b.checked = true);
+  mfrOtherBoxes.forEach(b => b.checked = false);
+  mfrOtherParentBox.checked = false; mfrOtherParentBox.indeterminate = false;
+  const subWrap = document.getElementById('mfr-sub-wrap');
+  const expandBtn = document.getElementById('mfr-expand-btn');
+  if (subWrap) subWrap.classList.remove('open');
+  if (expandBtn) expandBtn.textContent = '+';
+  const s = document.getElementById('ms-mfr-group-search');
+  if (s) { s.value = ''; mfrSearch(''); }
+  syncAllBox('ms-mfr-group'); updateMfrLabel();
+}
+
+function mfrCancel() {
+  const saved = msSavedState['ms-mfr-group'];
+  if (saved) { itemBoxes('ms-mfr-group').forEach((b, i) => { b.checked = !!saved[i]; }); delete msSavedState['ms-mfr-group']; }
+  const s = document.getElementById('ms-mfr-group-search');
+  if (s) { s.value = ''; mfrSearch(''); }
+  document.getElementById('ms-mfr-group').removeAttribute('open');
+  syncMfrOtherParent(); syncAllBox('ms-mfr-group'); updateMfrLabel();
+}
+
+function mfrApply() {
+  const s = document.getElementById('ms-mfr-group-search');
+  if (s) { s.value = ''; mfrSearch(''); }
+  document.getElementById('ms-mfr-group').removeAttribute('open');
+  delete msSavedState['ms-mfr-group'];
+  syncMfrOtherParent(); syncAllBox('ms-mfr-group'); updateMfrLabel();
+  applyFilters();
+}
+
 // Init all multi-selects
-initMs('ms-mfr-group',   [...KNOWN_MFR_LIST, 'Other'], MS_DEFAULTS['ms-mfr-group']);
-initMs('ms-mfr',         uniqueVals('Manufacturer'),   null);
+initMfrHierarchy();
 initMs('ms-model',       uniqueVals('Model'),           null);
 initMs('ms-engine',      uniqueVals('Engine_Type'),     null);
 initMs('ms-purpose',     uniqueVals('Reg_Purpose'),     null);
@@ -890,8 +1084,7 @@ function getVal(id) { return document.getElementById(id).value.trim().toLowerCas
 
 // Field extractors for each multi-select (used for available-value computation)
 const MS_FIELD = {
-  'ms-mfr-group':   r => normMfr(r.Manufacturer),
-  'ms-mfr':         r => (r.Manufacturer       || '').trim(),
+  'ms-mfr-group':   r => (r.Manufacturer       || '').trim(),
   'ms-model':       r => (r.Model              || '').trim(),
   'ms-engine':      r => (r.Engine_Type        || '').trim(),
   'ms-purpose':     r => (r.Reg_Purpose        || '').trim(),
@@ -967,8 +1160,7 @@ function getFilterState() {
     reg:      getVal('f-reg'),
     serial:   getVal('f-serial'),
     owner:    getVal('f-owner'),
-    mfrGroup: getSelected('ms-mfr-group'),
-    mfr:      getSelected('ms-mfr'),
+    mfrSel:   getMfrSel(),
     model:    getSelected('ms-model'),
     engine:   getSelected('ms-engine'),
     purpose:  getSelected('ms-purpose'),
@@ -990,8 +1182,7 @@ function checkRecord(r, s, skipId) {
   if (rd && s.dateLo && s.dateHi && (rd < s.dateLo || rd > s.dateHi)) return false;
   const ry = parseInt(r.Year_of_Manu) || 0;
   if (ry && s.yearLo && s.yearHi && (ry < s.yearLo || ry > s.yearHi)) return false;
-  if (skipId !== 'ms-mfr-group'   && s.mfrGroup && !s.mfrGroup.has(normMfr(r.Manufacturer)))             return false;
-  if (skipId !== 'ms-mfr'         && s.mfr      && !s.mfr.has((r.Manufacturer || '').trim()))            return false;
+  if (skipId !== 'ms-mfr-group' && s.mfrSel && !s.mfrSel.has((r.Manufacturer || '').trim())) return false;
   if (skipId !== 'ms-model'       && s.model     && !s.model.has((r.Model || '').trim()))                 return false;
   if (skipId !== 'ms-engine'      && s.engine    && !s.engine.has((r.Engine_Type || '').trim()))          return false;
   if (skipId !== 'ms-purpose'     && s.purpose   && !s.purpose.has((r.Reg_Purpose || '').trim()))        return false;
@@ -1021,6 +1212,11 @@ function applyFilters() {
       lbl.style.display = '';
     });
   });
+  // Also reset the Other parent row (not in itemBoxes since it's a group control, not a leaf)
+  if (mfrOtherParentBox) {
+    const lbl = mfrOtherParentBox.closest('label');
+    lbl.dataset.avail = '1'; lbl.style.display = '';
+  }
 
   const s = getFilterState();
 
@@ -1122,7 +1318,6 @@ function changePage(dir) {
 }
 
 // ── Charts ──────────────────────────────────────────────
-const KNOWN_MFRS = new Set(['Piper','Cessna','Diamond','Tecnam','QUEST','Beech','Cirrus','Mooney']);
 function normMfr(name) {
   const m = (name || '').trim();
   return KNOWN_MFRS.has(m) ? m : 'Other';
@@ -1215,7 +1410,8 @@ function renderCharts() {
 
 function clearFilters() {
   ['f-reg','f-serial','f-owner'].forEach(id => document.getElementById(id).value = '');
-  ['ms-mfr-group','ms-mfr','ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
+  resetMfrHierarchy();
+  ['ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
   resetDualRange('dr-date', minDate, maxDate);
   resetDualRange('dr-year', minYear, maxYear);
   activeOwnerFilter = null;
