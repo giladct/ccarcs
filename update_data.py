@@ -86,7 +86,7 @@ def step2_extract(zip_path):
 
 
 def step3_convert():
-    print('[3/5] Converting encoding (Windows-1252 → UTF-8)...')
+    print('[3/5] Converting encoding (Windows-1252 -> UTF-8)...')
     for f in ('carscurr.txt', 'carsownr.txt'):
         src = DATA_DIR / f
         dst = DATA_DIR / (f + '.utf8')

@@ -381,6 +381,14 @@
   .dr-group { display: flex; flex-direction: column; gap: 3px; }
   .dr-group label { font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: .4px; }
   .dr-labels { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-bottom: 2px; }
+  .dr-lbl-input {
+    width: 74px; font-size: 11px; color: #555; font-family: inherit;
+    border: 1px solid transparent; border-radius: 3px; padding: 1px 3px;
+    background: transparent; cursor: text;
+  }
+  .dr-lbl-input:hover { border-color: #ccd0d9; background: #fff; }
+  .dr-lbl-input:focus { border-color: #3b7dd8; background: #fff; outline: none; box-shadow: 0 0 0 2px rgba(59,125,216,.15); }
+  .dr-lbl-input.dr-lbl-hi { text-align: right; }
   .dr-track {
     position: relative; height: 20px; display: flex; align-items: center;
     min-width: 160px;
@@ -455,7 +463,7 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.0 &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a> &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span></span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a> &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span></span>
   </div>
 </header>
 
@@ -545,7 +553,7 @@
   <!-- Row 5: Owner Registered Since (range) -->
   <div class="dr-group">
     <label>Owner Registered Since</label>
-    <div class="dr-labels"><span id="dr-date-lo-lbl"></span><span id="dr-date-hi-lbl"></span></div>
+    <div class="dr-labels"><input class="dr-lbl-input" id="dr-date-lo-lbl" placeholder="from"><input class="dr-lbl-input dr-lbl-hi" id="dr-date-hi-lbl" placeholder="to"></div>
     <div class="dr-track">
       <div class="dr-track-bg"></div>
       <div class="dr-fill" id="dr-date-fill"></div>
@@ -557,7 +565,7 @@
   <!-- Row 6: Year of Manu. (range) -->
   <div class="dr-group">
     <label>Year of Manu.</label>
-    <div class="dr-labels"><span id="dr-year-lo-lbl"></span><span id="dr-year-hi-lbl"></span></div>
+    <div class="dr-labels"><input class="dr-lbl-input" id="dr-year-lo-lbl" placeholder="from"><input class="dr-lbl-input dr-lbl-hi" id="dr-year-hi-lbl" placeholder="to"></div>
     <div class="dr-track">
       <div class="dr-track-bg"></div>
       <div class="dr-fill" id="dr-year-fill"></div>
@@ -839,10 +847,12 @@ initMs('ms-engines-num', uniqueVals('No_Of_Engines').sort((a,b) => +a - +b), nul
 const allDates = AIRCRAFT_DATA.map(r => dateToN(r.Owner_Registered_Since)).filter(Boolean);
 const minDate = allDates.reduce((a,b) => a < b ? a : b, allDates[0] || 0);
 const maxDate = allDates.reduce((a,b) => a > b ? a : b, allDates[0] || 0);
-initDualRange('dr-date', minDate, maxDate, nToDate, nToDate);
+const dateLblParser = s => { const d = new Date(s); return isNaN(d) ? null : Math.floor(d.getTime() / 86400000); };
+const yearLblParser = s => { const y = parseInt(s); return (isNaN(y) || y < 1000 || y > 9999) ? null : y; };
+initDualRange('dr-date', minDate, maxDate, nToDate, dateLblParser);
 
 const minYear = 1936, maxYear = 2026;
-initDualRange('dr-year', minYear, maxYear, y => y, y => y);
+initDualRange('dr-year', minYear, maxYear, y => y, yearLblParser);
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', e => {
@@ -895,22 +905,38 @@ function nToDate(n) { return new Date(n * 86400000).toISOString().slice(0, 10); 
 
 let drDateLo, drDateHi, drYearLo, drYearHi;
 
-function initDualRange(prefix, loVal, hiVal, loFmt, hiFmt) {
+function initDualRange(prefix, loVal, hiVal, fmt, parser) {
   const lo = document.getElementById(prefix + '-lo');
   const hi = document.getElementById(prefix + '-hi');
   const fill = document.getElementById(prefix + '-fill');
+  const loLbl = document.getElementById(prefix + '-lo-lbl');
+  const hiLbl = document.getElementById(prefix + '-hi-lbl');
   lo.min = hi.min = loVal; lo.max = hi.max = hiVal;
   lo.value = loVal; hi.value = hiVal;
-  const updateVisual = () => {
+  const updateVisual = (skipLo, skipHi) => {
     let lv = +lo.value, hv = +hi.value;
     if (lv > hv) { if (document.activeElement === lo) hi.value = hv = lv; else lo.value = lv = hv; }
     const pct = v => (v - loVal) / (hiVal - loVal) * 100;
     fill.style.left = pct(lv) + '%'; fill.style.width = (pct(hv) - pct(lv)) + '%';
-    document.getElementById(prefix + '-lo-lbl').textContent = loFmt(lv);
-    document.getElementById(prefix + '-hi-lbl').textContent = hiFmt(hv);
+    if (!skipLo) loLbl.value = fmt(lv);
+    if (!skipHi) hiLbl.value = fmt(hv);
   };
-  lo.addEventListener('input', () => { updateVisual(); applyFilters(); });
-  hi.addEventListener('input', () => { updateVisual(); applyFilters(); });
+  const commitLbl = (lbl, slider, isLo) => {
+    const parsed = parser(lbl.value.trim());
+    if (parsed !== null) {
+      slider.value = Math.min(Math.max(parsed, +lo.min), +lo.max);
+      if (isLo && +hi.value < +slider.value) hi.value = slider.value;
+      if (!isLo && +lo.value > +slider.value) lo.value = slider.value;
+    }
+    updateVisual();
+    applyFilters();
+  };
+  loLbl.addEventListener('change', () => commitLbl(loLbl, lo, true));
+  loLbl.addEventListener('keydown', e => { if (e.key === 'Enter') loLbl.blur(); });
+  hiLbl.addEventListener('change', () => commitLbl(hiLbl, hi, false));
+  hiLbl.addEventListener('keydown', e => { if (e.key === 'Enter') hiLbl.blur(); });
+  lo.addEventListener('input', () => { updateVisual(false, false); applyFilters(); });
+  hi.addEventListener('input', () => { updateVisual(false, false); applyFilters(); });
   updateVisual(); // visual only during init — applyFilters() runs at bottom of script
   return { lo, hi };
 }
@@ -931,8 +957,8 @@ function resetDualRange(prefix, loVal, hiVal) {
   fill.style.left = pct(loVal) + '%'; fill.style.width = (pct(hiVal) - pct(loVal)) + '%';
   const loLbl = document.getElementById(prefix + '-lo-lbl');
   const hiLbl = document.getElementById(prefix + '-hi-lbl');
-  if (loLbl) loLbl.textContent = prefix === 'dr-year' ? loVal : nToDate(loVal);
-  if (hiLbl) hiLbl.textContent = prefix === 'dr-year' ? hiVal : nToDate(hiVal);
+  if (loLbl) loLbl.value = prefix === 'dr-year' ? loVal : nToDate(loVal);
+  if (hiLbl) hiLbl.value = prefix === 'dr-year' ? hiVal : nToDate(hiVal);
 }
 
 function getFilterState() {
