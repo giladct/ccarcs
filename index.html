@@ -472,7 +472,7 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a> &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span></span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a> &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every Monday</span>
   </div>
 </header>
 
@@ -1282,7 +1282,7 @@ function render() {
   const slice = filtered.slice(start, start + PAGE_SIZE);
 
   document.getElementById('results-count').innerHTML =
-    `<strong>${total.toLocaleString()}</strong> records found (of ${AIRCRAFT_DATA.length.toLocaleString()} total)`;
+    `<strong>${total.toLocaleString()}</strong> records found (of ${AIRCRAFT_DATA.length.toLocaleString()} total) &nbsp;·&nbsp; <span style="opacity:.7">Click on a registration for more options</span>`;
   document.getElementById('page-info').textContent = `Page ${currentPage} of ${pages}`;
   document.getElementById('btn-prev').disabled = currentPage <= 1;
   document.getElementById('btn-next').disabled = currentPage >= pages;
