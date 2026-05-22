@@ -3,7 +3,7 @@ name: Update CCARCS Data
 on:
   workflow_dispatch:   # manual trigger from GitHub Actions UI
   schedule:
-    - cron: '0 6 * * 1'  # every Monday at 06:00 UTC
+    - cron: '0 6 * * *'  # every day at 06:00 UTC
 
 jobs:
   update:
