@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>For-Sale Extractor — CCARCS</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #333; }
+  h1 { font-size: 20px; color: #1a3a5c; }
+  h2 { font-size: 14px; color: #444; margin-top: 28px; border-top: 1px solid #eee; padding-top: 16px; }
+  p, li { font-size: 13px; line-height: 1.7; }
+  code { background: #f0f4fa; padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+  pre { background: #f0f4fa; padding: 14px; border-radius: 5px; font-size: 12px; overflow-x: auto; }
+  .bm-box { background: #f0f4fa; border: 1px solid #ccd0d9; border-radius: 6px; padding: 14px 16px; margin: 12px 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .bm { display: inline-block; background: #1a3a5c; color: #fff !important; padding: 9px 16px; border-radius: 5px; text-decoration: none; font-size: 13px; font-weight: 600; cursor: grab; user-select: none; white-space: nowrap; }
+  .bm:hover { background: #234d7a; }
+  .bm.diag { background: #555; }
+  .bm.diag:hover { background: #333; }
+  .note { background: #fff8dc; border-left: 3px solid #f0c040; padding: 8px 12px; font-size: 12px; margin: 10px 0; border-radius: 0 4px 4px 0; }
+  .step { display: flex; gap: 12px; margin: 8px 0; }
+  .sn { background: #1a3a5c; color: #fff; border-radius: 50%; min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-top: 3px; }
+</style>
+</head>
+<body>
+
+<h1>For-Sale Extractor — CCARCS Dashboard</h1>
+<p>Run these bookmarklets on any aviation listing site in your own browser. Your browser session bypasses bot-detection and CAPTCHAs automatically.</p>
+
+<h2>Step 1 — Diagnose (run this first if the extractor fails)</h2>
+<p>Run this on the listing page to see what link patterns the site uses:</p>
+<div class="bm-box">
+  <a class="bm diag" href="javascript:(function(){var links=[...document.querySelectorAll('a[href]')].map(function(a){return a.getAttribute('href')||''}).filter(function(h,i,arr){return h&&h.length>1&&arr.indexOf(h)===i}).slice(0,30);var msg='Current URL:\n'+location.href+'\n\nFirst 30 hrefs on page:\n'+links.join('\n');prompt('Copy this and share with the developer:',msg);})();">🔍 Diagnose Links</a>
+  <span style="font-size:12px;color:#666">Opens a box with sample links — copy and share so the extractor can be fixed for this site.</span>
+</div>
+
+<h2>Step 2 — Extract all listings</h2>
+<div class="bm-box">
+  <a class="bm" href="javascript:(function(){async function run(){var src=location.hostname,results={},st=document.createElement('div');st.style='position:fixed;top:12px;right:12px;background:#1a3a5c;color:#fff;padding:12px 18px;border-radius:6px;z-index:99999;font:13px/1.6 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:240px';document.body.appendChild(st);function getLinks(doc,base){var seen=new Set(),origin=new URL(base).origin,basePath=new URL(base).pathname.replace(/\/$/,'');return[...doc.querySelectorAll('a[href]')].reduce(function(acc,a){var h=a.getAttribute('href')||'';var full;try{full=new URL(h,base).href}catch(e){return acc}var u;try{u=new URL(full)}catch(e){return acc}if(u.origin!==origin)return acc;if(seen.has(full)||!seen.add(full))return acc;var path=u.pathname.replace(/\/$/,'');if(!path||path===basePath)return acc;if(/^\/(about|contact|help|login|account|cart|blog|news|faq|privacy|terms|sitemap|register|rss)/i.test(path))return acc;var segs=path.split('/').filter(Boolean);if(/\d{3,}/.test(path)||segs.length>=4)acc.push(full);return acc},[])};function getNext(doc,base){var sel=['a[rel=next]','[aria-label*=Next] a','a[aria-label*=Next]','.next a','[class*=next] a','a[class*=next]','[class*=pagination] li:last-child a'];for(var i=0;i<sel.length;i++){var a=doc.querySelector(sel[i]);if(a){try{var h=new URL(a.getAttribute('href')||'',base).href;if(h!==base)return h}catch(e){}}}return null};var all=getLinks(document,location.href),nxt=getNext(document,location.href),page=2;st.textContent='CCARCS: '+all.length+' listings on page 1...';while(nxt&&page<=30){try{var pr=await fetch(nxt,{credentials:'include'});var html=await pr.text();var d=(new DOMParser()).parseFromString(html,'text/html');var nl=getLinks(d,nxt);all=all.concat(nl);st.textContent='CCARCS: '+all.length+' listings, '+page+' pages...';var nn=getNext(d,nxt);if(!nn||nn===nxt)break;nxt=nn;page++}catch(e){break}await new Promise(function(r){setTimeout(r,400)})};all=[...new Set(all)];if(!all.length){document.body.removeChild(st);var sample=[...document.querySelectorAll('a[href]')].map(function(a){return a.getAttribute('href')||''}).filter(function(h,i,arr){return h&&h.length>1&&arr.indexOf(h)===i}).slice(0,25).join('\n');prompt('No links matched. Copy these hrefs and share with the developer so the filter can be fixed:',location.href+'\n\n'+sample);return};for(var i=0;i<all.length;i++){st.innerHTML='CCARCS: scanning '+(i+1)+'/'+all.length+'<br><small style=opacity:.7>'+all[i].replace(/^https?:\/\/[^/]+/,'').slice(-55)+'</small>';try{var r=await fetch(all[i],{credentials:'include'});var txt=await r.text();var m=txt.match(/\bC-[A-Z]{4}\b/);if(m){var pm=txt.match(/\$\s*[\d,]+/);results[m[0]]={source:src,url:all[i],price:pm?pm[0]:null}}}catch(e){}await new Promise(function(r){setTimeout(r,180)})};document.body.removeChild(st);var count=Object.keys(results).length,blob=new Blob([JSON.stringify(results,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='forsale_manual.json';a.click();URL.revokeObjectURL(a.href);alert('Done!\nScanned '+all.length+' listings.\nFound '+count+' C-registrations.\n\nMove forsale_manual.json to your CCARCS folder and run the update script.')}run().catch(function(e){alert('Error: '+e.message)});})();">📋 Extract All Listings</a>
+  <span style="font-size:12px;color:#666">Visit a search results page, click this. Crawls every detail page automatically and downloads <code>forsale_manual.json</code>.</span>
+</div>
+
+<h2>Supported sites — Canada search URLs</h2>
+<table style="width:100%;border-collapse:collapse;font-size:12px;margin:10px 0">
+  <tr style="background:#f0f4fa">
+    <th style="text-align:left;padding:6px 10px;border:1px solid #dde">Site</th>
+    <th style="text-align:left;padding:6px 10px;border:1px solid #dde">Canada search URL</th>
+    <th style="text-align:left;padding:6px 10px;border:1px solid #dde">Notes</th>
+  </tr>
+  <tr>
+    <td style="padding:6px 10px;border:1px solid #dde"><strong>Controller.com</strong></td>
+    <td style="padding:6px 10px;border:1px solid #dde"><code>controller.com/listings/aircraft-for-sale-in-canada/?Country=32</code></td>
+    <td style="padding:6px 10px;border:1px solid #dde">✅ Working</td>
+  </tr>
+  <tr>
+    <td style="padding:6px 10px;border:1px solid #dde"><strong>Trade-A-Plane</strong></td>
+    <td style="padding:6px 10px;border:1px solid #dde"><code>trade-a-plane.com/search?seller_country=Canada&amp;s-type=aircraft</code></td>
+    <td style="padding:6px 10px;border:1px solid #dde">Try bookmarklet; run Diagnose if it fails</td>
+  </tr>
+  <tr>
+    <td style="padding:6px 10px;border:1px solid #dde"><strong>GlobalAir.com</strong></td>
+    <td style="padding:6px 10px;border:1px solid #dde"><code>globalair.com/aircraft-for-sale/country/canada</code></td>
+    <td style="padding:6px 10px;border:1px solid #dde">Try bookmarklet; run Diagnose if it fails</td>
+  </tr>
+  <tr>
+    <td style="padding:6px 10px;border:1px solid #dde"><strong>ASO.com</strong></td>
+    <td style="padding:6px 10px;border:1px solid #dde"><code>aso.com/listings/list/?country=CA</code></td>
+    <td style="padding:6px 10px;border:1px solid #dde">Try bookmarklet; run Diagnose if it fails</td>
+  </tr>
+</table>
+
+<h2>Usage</h2>
+<div class="step"><div class="sn">1</div><p>Open one of the Canada search URLs above in your browser.</p></div>
+<div class="step"><div class="sn">2</div><p>Click <strong>Extract All Listings</strong>. A progress counter appears top-right. Takes ~1 min for 100 listings.</p></div>
+<div class="step"><div class="sn">3</div><p>If it says "No listing links found", click <strong>Diagnose Links</strong> and share the output so the URL filter can be fixed.</p></div>
+<div class="step"><div class="sn">4</div><p><strong>Merge results:</strong> run the extractor on each site, then combine the downloaded JSON files before dropping into <code>d:\gilead\ClaudeProjects\</code>. Don't overwrite — merge, so listings from all sites are preserved.</p></div>
+<div class="step"><div class="sn">5</div><p>Run the update script (or let the daily GitHub Action do it).</p></div>
+
+<h2>Manual entry</h2>
+<pre>{
+  "C-FABC": {"source": "Controller", "url": "https://...", "price": "$45,000"},
+  "C-GXYZ": {"source": "Barnstormers", "url": "https://...", "price": null}
+}</pre>
+
+</body>
+</html>

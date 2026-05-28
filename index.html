@@ -465,6 +465,53 @@
     border: none; border-radius: 4px; cursor: pointer; font-size: 12px;
   }
   .modal-box .modal-close:hover { background: #234d7a; }
+
+  /* ── Deregister row feature ── */
+  tr.deregistered td { color: #bbb; }
+  tr.deregistered td a { color: #bbb !important; }
+  .badge-forsale {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    background: #dcfce7; color: #15803d; border-radius: 3px;
+    padding: 1px 4px; margin-left: 5px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: .3px; text-decoration: none;
+    border: 1px solid #86efac;
+  }
+  .badge-forsale:hover { background: #bbf7d0; }
+  .badge-faa {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    background: #dbeafe; color: #1d4ed8; border-radius: 3px;
+    padding: 1px 4px; margin-left: 5px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: .3px; text-decoration: none;
+  }
+  .badge-faa:hover { background: #bfdbfe; }
+  .badge-dereg {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    background: #f0f0f0; color: #bbb; border-radius: 3px;
+    padding: 1px 4px; margin-left: 5px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: .3px;
+  }
+
+  /* ── Info icon + popup ── */
+  .info-btn {
+    background: none; border: 1.5px solid rgba(255,255,255,.45); color: #fff;
+    border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: 700;
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    opacity: .75; transition: opacity .15s;
+  }
+  .info-btn:hover { opacity: 1; }
+  .info-popup {
+    display: none; position: fixed; z-index: 9999;
+    background: #fff; border: 1px solid #ccd0d9; border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.15); padding: 18px 20px;
+    max-width: 380px; font-size: 12px; line-height: 1.7; color: #333;
+  }
+  .info-popup.open { display: block; }
+  .info-popup h3 { font-size: 13px; font-weight: 700; color: #1a3a5c; margin-bottom: 10px; }
+  .info-popup table { width: 100%; border-collapse: collapse; }
+  .info-popup td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+  .info-popup td:first-child { font-weight: 600; white-space: nowrap; color: #1a3a5c; width: 110px; }
+  .info-popup tr:last-child td { border-bottom: none; }
+  .info-popup .src-tag { font-size: 10px; background: #f0f4fa; border-radius: 3px; padding: 1px 5px; margin-right: 3px; }
 </style>
 </head>
 <body>
@@ -472,9 +519,36 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Register download: <a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#7fb3f5">wwwapps.tc.gc.ca/…/DDZip.aspx</a> &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every day</span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every day</span>
   </div>
+  <button class="info-btn" onclick="toggleInfoPopup(event)" title="Data sources">i</button>
 </header>
+
+<div id="info-popup" class="info-popup">
+  <h3>Data Sources</h3>
+  <table>
+    <tr>
+      <td><a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#1a3a5c">TC CCARCS</a></td>
+      <td>Transport Canada civil aircraft register — registration, owner, aircraft details. Auto-refreshed daily.</td>
+    </tr>
+    <tr>
+      <td><a href="https://registry.faa.gov/database/ReleasableAircraft.zip" target="_blank" style="color:#1a3a5c">FAA Registry</a></td>
+      <td>US Federal Aviation Administration registry — cross-referenced by serial number to find N-numbers for Canadian-built aircraft registered in the US.</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.controller.com/listings/aircraft-for-sale-in-canada/?Country=32" target="_blank"><span class="src-tag">controller</span></a></td>
+      <td>Controller.com Canadian listings — collected via browser bookmarklet (Cloudflare blocks automated scraping).</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.trade-a-plane.com/filtered/search?s-type=aircraft&s-keyword-search=canada&s-original-search=canada" target="_blank"><span class="src-tag">trade-a-plane</span></a></td>
+      <td>Trade-A-Plane Canada keyword search — auto-scraped daily using Playwright.</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.globalair.com/aircraft-for-sale/aircraft-in-ontario" target="_blank"><span class="src-tag">globalair</span></a></td>
+      <td>GlobalAir.com Ontario listings — auto-scraped. Prices not available (Cloudflare blocks detail pages).</td>
+    </tr>
+  </table>
+</div>
 
 <div id="update-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal-box">
@@ -609,6 +683,16 @@
     </div>
   </div>
 
+  <div class="filter-group">
+    <label>Listing Status</label>
+    <select id="f-status" onchange="applyFilters()" style="border:1px solid #ccd0d9;border-radius:4px;padding:5px 8px;font-size:12px;height:30px;background:#fff;outline:none;cursor:pointer">
+      <option value="active">Active only</option>
+      <option value="all">All</option>
+      <option value="unlisted">No longer listed</option>
+      <option value="forsale">For sale</option>
+    </select>
+  </div>
+
   <button class="btn-clear" onclick="clearFilters()">Clear</button>
 
 </div>
@@ -675,15 +759,17 @@
         <th onclick="sortBy('Manufacturer')">Manufacturer <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Model')">Model <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Serial_No')">Serial No. <span class="sort-arrow">&#8597;</span></th>
-        <th onclick="sortBy('Owner_Registered_Since')">Owner Registered Since <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Owner_Registered_Since')">Owner Reg. Since <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Reg_Purpose')">Reg. Purpose <span class="sort-arrow">&#8597;</span></th>
-        <th onclick="sortBy('No_Of_Engines')">No. Of Engines <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('No_Of_Engines')">Engines <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Engine_Type')">Engine Type <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Address')">Address <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('City')">City <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Province')">Province <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Postal_Code')">Postal Code <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Country')">Country <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_deleted_date')">Removed <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_for_sale_price')">Listing <span class="sort-arrow">&#8597;</span></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -700,6 +786,14 @@ let filtered = [];
 let currentPage = 1;
 let sortCol = null;
 let sortAsc = true;
+
+function statusMatch(r) {
+  const s = document.getElementById('f-status').value;
+  if (s === 'active')   return !r._deleted;
+  if (s === 'unlisted') return !!r._deleted;
+  if (s === 'forsale')  return !!r._for_sale;
+  return true;
+}
 
 // Show data date in header and update modal
 if (typeof DATA_DATE !== 'undefined') {
@@ -1054,17 +1148,33 @@ document.addEventListener('click', e => {
     document.querySelectorAll('details.ms-drop[open]').forEach(d => msCancel(d.id));
   if (!e.target.closest('#reg-popup') && !e.target.closest('td.reg'))
     document.getElementById('reg-popup').classList.remove('open');
+  if (!e.target.closest('#info-popup') && !e.target.closest('.info-btn'))
+    document.getElementById('info-popup').classList.remove('open');
 });
 
-function showRegPopup(e, reg) {
+function toggleInfoPopup(e) {
+  e.stopPropagation();
+  const popup = document.getElementById('info-popup');
+  popup.classList.toggle('open');
+  if (popup.classList.contains('open')) {
+    const btn = e.currentTarget.getBoundingClientRect();
+    popup.style.top  = (btn.bottom + 8) + 'px';
+    popup.style.right = (window.innerWidth - btn.right) + 'px';
+  }
+}
+
+function showRegPopup(e, reg, faaReg, saleUrl, saleSrc, salePrice) {
   e.preventDefault();
   e.stopPropagation();
   const t = reg.trim();
   const popup = document.getElementById('reg-popup');
   popup.innerHTML =
     `<a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/RchHsRes.aspx?mh=${encodeURIComponent(t)}" target="_blank">Reg. History</a>` +
-    `<a href="https://www.flightaware.com/live/flight/C${encodeURIComponent(t)}" target="_blank">FlightAware</a>` +
-    `<a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/RchSimpRes.aspx?cn=%7c%7c&mn=%7c%7c&sn=%7c%7c&on=%7c%7c&m=%7c${encodeURIComponent(t)}%7c&rfr=RchSimp.aspx" target="_blank">CA Register</a>`;
+    `<a href="https://www.flightaware.com/live/flight/C${encodeURIComponent(t)}" target="_blank">FlightAware (Canada)</a>` +
+    `<a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/RchSimpRes.aspx?cn=%7c%7c&mn=%7c%7c&sn=%7c%7c&on=%7c%7c&m=%7c${encodeURIComponent(t)}%7c&rfr=RchSimp.aspx" target="_blank">CA Register</a>` +
+    (saleUrl ? `<a href="${saleUrl}" target="_blank" style="color:#15803d;font-weight:600">For Sale on ${saleSrc}${salePrice ? ' — ' + salePrice : ''} ↗</a>` : '') +
+    (faaReg ? `<a href="https://registry.faa.gov/AircraftInquiry/Search/NNumberResult?nNumberTxt=${encodeURIComponent(faaReg.slice(1))}" target="_blank">FAA Registry (${faaReg})</a>` : '') +
+    (faaReg ? `<a href="https://www.flightaware.com/live/flight/${encodeURIComponent(faaReg)}" target="_blank">FlightAware (${faaReg})</a>` : '');
   // Position near click, keep inside viewport
   const vw = window.innerWidth, vh = window.innerHeight;
   let x = e.clientX + 6, y = e.clientY + 6;
@@ -1222,21 +1332,37 @@ function applyFilters() {
 
   // Update each dropdown to show only values relevant given all OTHER active filters
   Object.entries(MS_FIELD).forEach(([id, fn]) => {
-    const avail = new Set(AIRCRAFT_DATA.filter(r => checkRecord(r, s, id)).map(fn).filter(Boolean));
+    const avail = new Set(AIRCRAFT_DATA.filter(r => statusMatch(r) && checkRecord(r, s, id)).map(fn).filter(Boolean));
     updateMsAvailable(id, avail);
   });
 
   // Re-read state after availability update (some checked items may have been hidden/unchecked)
   const s2 = getFilterState();
-  filtered = AIRCRAFT_DATA.filter(r => checkRecord(r, s2, null));
+  filtered = AIRCRAFT_DATA.filter(r => statusMatch(r) && checkRecord(r, s2, null));
 
   // Sort
   if (sortCol) {
+    const getVal = (r, col) => {
+      if (col === '_for_sale_price') {
+        if (!r._for_sale) return { tier: 2, v: 0 };           // no listing
+        const p = r._for_sale.price;
+        if (!p) return { tier: 1, v: 0 };                     // listed, no price
+        const n = +p.replace(/[^0-9]/g, '');
+        return { tier: 0, v: isNaN(n) ? 0 : n };              // listed with price
+      }
+      return r[col] ?? '';
+    };
     filtered.sort((a, b) => {
-      let av = (a[sortCol] || ''), bv = (b[sortCol] || '');
-      if (!isNaN(av) && !isNaN(bv)) { av = +av; bv = +bv; }
-      if (av < bv) return sortAsc ? -1 : 1;
-      if (av > bv) return sortAsc ?  1 : -1;
+      const av = getVal(a, sortCol), bv = getVal(b, sortCol);
+      if (av && typeof av === 'object' && bv && typeof bv === 'object') {
+        if (av.tier !== bv.tier) return av.tier - bv.tier;    // tier order always ascending
+        if (av.tier > 0) return 0;                            // no-price tiers: stable
+        return sortAsc ? av.v - bv.v : bv.v - av.v;          // tier 0: respect direction
+      }
+      let avv = av ?? '', bvv = bv ?? '';
+      if (!isNaN(avv) && !isNaN(bvv)) { avv = +avv; bvv = +bvv; }
+      if (avv < bvv) return sortAsc ? -1 : 1;
+      if (avv > bvv) return sortAsc ?  1 : -1;
       return 0;
     });
   }
@@ -1256,7 +1382,7 @@ function sortBy(col) {
   }
   // Update header styles (scope to main table only, not owner table)
   const ths = document.querySelectorAll('.table-wrap thead th');
-  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country'];
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price'];
   ths.forEach(th => {
     th.classList.remove('sorted');
     const arrow = th.querySelector('.sort-arrow');
@@ -1281,20 +1407,22 @@ function render() {
   const start = (currentPage - 1) * PAGE_SIZE;
   const slice = filtered.slice(start, start + PAGE_SIZE);
 
+  const deregCount = AIRCRAFT_DATA.filter(r => r._deleted).length;
+  const activeTotal = AIRCRAFT_DATA.length - deregCount;
   document.getElementById('results-count').innerHTML =
-    `<strong>${total.toLocaleString()}</strong> records found (of ${AIRCRAFT_DATA.length.toLocaleString()} total) &nbsp;·&nbsp; <span style="opacity:.7">Click on a registration for more options</span>`;
+    `<strong>${total.toLocaleString()}</strong> records found (of ${activeTotal.toLocaleString()} active, ${deregCount.toLocaleString()} no longer listed) &nbsp;·&nbsp; <span style="opacity:.7">Click on a registration for more options</span>`;
   document.getElementById('page-info').textContent = `Page ${currentPage} of ${pages}`;
   document.getElementById('btn-prev').disabled = currentPage <= 1;
   document.getElementById('btn-next').disabled = currentPage >= pages;
 
   if (slice.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="15" class="empty">No records match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="17" class="empty">No records match the current filters.</td></tr>';
     return;
   }
 
   tbody.innerHTML = slice.map(r => `
-    <tr>
-      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}')">${esc(r.Registration)}</a></td>
+    <tr${r._deleted ? ' class="deregistered"' : ''}>
+      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"})">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_reg ? `<a class="badge-faa" href="https://registry.faa.gov/AircraftInquiry/Search/NNumberResult?nNumberTxt=${encodeURIComponent(r._faa_reg.slice(1))}" target="_blank">${esc(r._faa_reg)}</a>` : ''}</td>
       <td title="${esc(r.Owner_Name)}">${esc(r.Owner_Name)}</td>
       <td>${esc(r.Year_of_Manu)}</td>
       <td title="${esc(r.Manufacturer)}">${esc(r.Manufacturer)}</td>
@@ -1309,6 +1437,8 @@ function render() {
       <td>${esc(r.Province)}</td>
       <td>${esc(r.Postal_Code)}</td>
       <td>${esc(r.Country)}</td>
+      <td style="color:#aaa">${esc(r._deleted_date || '')}</td>
+      <td>${r._for_sale ? `<a href="${esc(r._for_sale.url)}" target="_blank" style="color:#15803d;font-weight:600;white-space:nowrap">${esc((r._for_sale.source||'').replace(/^www\./,'').replace(/\.(com|ca|org|net)$/,''))}${r._for_sale.price ? ' · ' + esc(r._for_sale.price) : ''} ↗</a>${r._for_sale.date ? `<br><span style="color:#aaa;font-size:10px">${esc(r._for_sale.date)}</span>` : ''}` : ''}</td>
     </tr>`).join('');
 }
 
@@ -1410,6 +1540,7 @@ function renderCharts() {
 
 function clearFilters() {
   ['f-reg','f-serial','f-owner'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-status').value = 'active';
   resetMfrHierarchy();
   ['ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
   resetDualRange('dr-date', minDate, maxDate);
@@ -1571,16 +1702,22 @@ function renderMap() {
 function exportCsv() {
   const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No',
     'Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type',
-    'Address','City','Province','Postal_Code','Country'];
+    'Address','City','Province','Postal_Code','Country','_deleted_date','_faa_reg'];
   const headers = ['Registration','Owner Name','Year of Manu','Manufacturer','Model','Serial No',
     'Owner Registered Since','Reg Purpose','No Of Engines','Engine Type',
-    'Address','City','Province','Postal Code','Country'];
+    'Address','City','Province','Postal Code','Country','Removed','FAA Reg',
+    'For Sale Source','For Sale URL','For Sale Price'];
   const esc = v => {
     const s = v == null ? '' : String(v);
     return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
   };
   const rows = [headers.join(',')];
-  filtered.forEach(r => rows.push(cols.map(c => esc(r[c])).join(',')));
+  filtered.forEach(r => rows.push([
+    ...cols.map(c => esc(r[c])),
+    esc(r._for_sale?.source || ''),
+    esc(r._for_sale?.url    || ''),
+    esc(r._for_sale?.price  || ''),
+  ].join(',')));
   const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

@@ -1,0 +1,9 @@
+CCARCS_data/
+faa_data/
+sqlite-tools/
+ccarcs.db
+data_raw.json
+__pycache__/
+*.sql
+*.ps1
+*.bat
