@@ -259,6 +259,20 @@
   thead th .sort-arrow { margin-left: 3px; opacity: .4; font-size: 9px; }
   thead th.sorted .sort-arrow { opacity: 1; color: #3b7dd8; }
 
+  .col-info { display:inline-block; margin-left:4px; font-size:10px; color:#9ba8bb;
+    cursor:default; position:relative; top:-0.5px; font-weight:400;
+    user-select:none; vertical-align:middle; }
+  .col-info::after { content:attr(data-tip); display:none; position:absolute;
+    top:calc(100% + 5px); left:50%; transform:translateX(-50%);
+    background:#1e2a3a; color:#e8edf5; font-size:11px;
+    padding:5px 9px; border-radius:5px; line-height:1.45; pointer-events:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.25); z-index:9999; font-weight:400;
+    text-align:left; max-width:260px; white-space:normal; width:max-content; }
+  .col-info:hover { color:#3b7dd8; }
+  .col-info:hover::after { display:block; }
+  .col-info.tip-left::after { left:auto; right:0; transform:none; }
+
+
   tbody tr { border-bottom: 1px solid #eef0f3; }
   tbody tr:hover { background: #f5f8ff; }
   tbody td {
@@ -490,6 +504,14 @@
     padding: 1px 4px; margin-left: 5px; vertical-align: middle;
     text-transform: uppercase; letter-spacing: .3px;
   }
+  .badge-incident {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    background: #fef3c7; color: #b45309; border-radius: 3px;
+    padding: 1px 5px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: .3px; text-decoration: none;
+    border: 1px solid #fcd34d; cursor: pointer;
+  }
+  .badge-incident:hover { background: #fde68a; }
 
   /* ── Info icon + popup ── */
   .info-btn {
@@ -503,12 +525,13 @@
     display: none; position: fixed; z-index: 9999;
     background: #fff; border: 1px solid #ccd0d9; border-radius: 8px;
     box-shadow: 0 6px 24px rgba(0,0,0,.15); padding: 18px 20px;
-    max-width: 380px; font-size: 12px; line-height: 1.7; color: #333;
+    width: 560px; max-width: calc(100vw - 32px); font-size: 12px; line-height: 1.7; color: #333;
   }
   .info-popup.open { display: block; }
   .info-popup h3 { font-size: 13px; font-weight: 700; color: #1a3a5c; margin-bottom: 10px; }
   .info-popup table { width: 100%; border-collapse: collapse; }
-  .info-popup td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+  .info-popup td { padding: 4px 6px; vertical-align: top; border-bottom: 1px solid #f0f0f0; white-space: normal; word-wrap: break-word; }
+  .info-popup td:nth-child(2) { max-width: 380px; }
   .info-popup td:first-child { font-weight: 600; white-space: nowrap; color: #1a3a5c; width: 110px; }
   .info-popup tr:last-child td { border-bottom: none; }
   .info-popup .src-tag { font-size: 10px; background: #f0f4fa; border-radius: 3px; padding: 1px 5px; margin-right: 3px; }
@@ -529,23 +552,31 @@
   <table>
     <tr>
       <td><a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx" target="_blank" style="color:#1a3a5c">TC CCARCS</a></td>
-      <td>Transport Canada civil aircraft register — registration, owner, aircraft details. Auto-refreshed daily.</td>
+      <td>Transport Canada's official civil aircraft register — the backbone of this dashboard. Provides registration status, owner, aircraft specs, and registration dates. Auto-downloaded daily.</td>
+    </tr>
+    <tr>
+      <td><a href="https://opendatatc.tc.canada.ca" target="_blank" style="color:#1a3a5c">TC CADORS</a></td>
+      <td>Transport Canada's Civil Aviation Daily Occurrence Reporting System. Used to surface safety incidents and accidents linked to each aircraft over the last 5 years.</td>
+    </tr>
+    <tr>
+      <td><a href="https://opensky-network.org" target="_blank" style="color:#1a3a5c">OpenSky Network</a></td>
+      <td>Crowdsourced live ADS-B flight tracking. Queried daily over Canadian airspace to record when each aircraft was last observed flying — helps distinguish active from dormant registrations.</td>
     </tr>
     <tr>
       <td><a href="https://registry.faa.gov/database/ReleasableAircraft.zip" target="_blank" style="color:#1a3a5c">FAA Registry</a></td>
-      <td>US Federal Aviation Administration registry — cross-referenced by serial number to find N-numbers for Canadian-built aircraft registered in the US.</td>
+      <td>US aircraft registry cross-referenced by serial number. Reveals the N-number when a Canadian-built aircraft is re-registered in the US, so it can still be tracked after leaving the Canadian register.</td>
     </tr>
     <tr>
       <td><a href="https://www.controller.com/listings/aircraft-for-sale-in-canada/?Country=32" target="_blank"><span class="src-tag">controller</span></a></td>
-      <td>Controller.com Canadian listings — collected via browser bookmarklet (Cloudflare blocks automated scraping).</td>
+      <td>One of the largest aviation marketplaces. For-sale listings are collected manually via a browser bookmarklet — Cloudflare blocks automated scraping.</td>
     </tr>
     <tr>
       <td><a href="https://www.trade-a-plane.com/filtered/search?s-type=aircraft&s-keyword-search=canada&s-original-search=canada" target="_blank"><span class="src-tag">trade-a-plane</span></a></td>
-      <td>Trade-A-Plane Canada keyword search — auto-scraped daily using Playwright.</td>
+      <td>Major aircraft marketplace, auto-scraped daily. Catches Canadian for-sale listings that don't appear on Controller.com.</td>
     </tr>
     <tr>
       <td><a href="https://www.globalair.com/aircraft-for-sale/aircraft-in-ontario" target="_blank"><span class="src-tag">globalair</span></a></td>
-      <td>GlobalAir.com Ontario listings — auto-scraped. Prices not available (Cloudflare blocks detail pages).</td>
+      <td>Covers jets and turboprops not typically listed on Trade-A-Plane. Auto-scraped by province. Prices unavailable — Cloudflare blocks detail pages.</td>
     </tr>
   </table>
 </div>
@@ -687,9 +718,21 @@
     <label>Listing Status</label>
     <select id="f-status" onchange="applyFilters()" style="border:1px solid #ccd0d9;border-radius:4px;padding:5px 8px;font-size:12px;height:30px;background:#fff;outline:none;cursor:pointer">
       <option value="active">Active only</option>
-      <option value="all">All</option>
+      <option value="all" selected>All</option>
       <option value="unlisted">No longer listed</option>
       <option value="forsale">For sale</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label>Activity</label>
+    <select id="f-activity" onchange="applyFilters()" style="border:1px solid #ccd0d9;border-radius:4px;padding:5px 8px;font-size:12px;height:30px;background:#fff;outline:none;cursor:pointer">
+      <option value="">All</option>
+      <option value="dormant30">Not seen flying 30d+</option>
+      <option value="dormant90">Not seen flying 90d+</option>
+      <option value="dormant180">Not seen flying 180d+</option>
+      <option value="incidents">Has incidents</option>
+      <option value="both">Not flying 90d+ + incidents</option>
     </select>
   </div>
 
@@ -768,8 +811,10 @@
         <th onclick="sortBy('Province')">Province <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Postal_Code')">Postal Code <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Country')">Country <span class="sort-arrow">&#8597;</span></th>
-        <th onclick="sortBy('_deleted_date')">Removed <span class="sort-arrow">&#8597;</span></th>
-        <th onclick="sortBy('_for_sale_price')">Listing <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_deleted_date')">Removed <span class="col-info" data-tip="Date the aircraft was deregistered&#10;from the Canadian Civil Aircraft&#10;Register (Transport Canada CCARCS).">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_for_sale_price')">Listing <span class="col-info" data-tip="For-sale price &amp; link scraped from&#10;Trade-A-Plane, Controller.com,&#10;and GlobalAir.com. Date = first seen.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_last_seen')">Last Seen <span class="col-info tip-left" data-tip="Last date the aircraft was observed&#10;flying over Canada via OpenSky&#10;Network live ADS-B data. Builds up&#10;over time with each daily run.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_cadors_count')">Incidents <span class="col-info tip-left" data-tip="Number of incidents in the last 5 years&#10;from Transport Canada CADORS.&#10;Click badge to see incident details.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -784,8 +829,8 @@
 const PAGE_SIZE = 100;
 let filtered = [];
 let currentPage = 1;
-let sortCol = null;
-let sortAsc = true;
+let sortCol = 'Owner_Registered_Since';
+let sortAsc = false;
 
 function statusMatch(r) {
   const s = document.getElementById('f-status').value;
@@ -1185,6 +1230,11 @@ function showRegPopup(e, reg, faaReg, saleUrl, saleSrc, salePrice) {
   popup.style.top  = y + 'px';
 }
 
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+}
+
 // Debounce for text inputs
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 const textInputs = ['f-reg','f-serial','f-owner'];
@@ -1281,6 +1331,7 @@ function getFilterState() {
     chartOwner: activeOwnerFilter,
     chartMfr:   activeMfrFilter,
     chartMap:   activeMapFilter,
+    activity:   document.getElementById('f-activity').value,
   };
 }
 
@@ -1300,6 +1351,14 @@ function checkRecord(r, s, skipId) {
   if (skipId !== 'ms-engines-num' && s.engNum    && !s.engNum.has(String(r.No_Of_Engines || '').trim())) return false;
   if (s.chartOwner && (r.Owner_Name || '').trim() !== s.chartOwner) return false;
   if (s.chartMfr   && normMfr(r.Manufacturer)    !== s.chartMfr)   return false;
+  if (s.activity) {
+    const ds = daysSince(r._last_seen);
+    if (s.activity === 'dormant30'  && !(r._last_seen && ds >= 30))  return false;
+    if (s.activity === 'dormant90'  && !(r._last_seen && ds >= 90))  return false;
+    if (s.activity === 'dormant180' && !(r._last_seen && ds >= 180)) return false;
+    if (s.activity === 'incidents'  && !(r._cadors?.count > 0))      return false;
+    if (s.activity === 'both'       && !(r._last_seen && ds >= 90 && r._cadors?.count > 0)) return false;
+  }
   if (s.chartMap) {
     const { key, groupBy } = s.chartMap;
     let rKey;
@@ -1350,6 +1409,8 @@ function applyFilters() {
         const n = +p.replace(/[^0-9]/g, '');
         return { tier: 0, v: isNaN(n) ? 0 : n };              // listed with price
       }
+      if (col === '_last_seen')   return r._last_seen   || '';
+      if (col === '_cadors_count') return r._cadors?.count ?? 0;
       return r[col] ?? '';
     };
     filtered.sort((a, b) => {
@@ -1378,11 +1439,12 @@ function sortBy(col) {
     if (sortAsc) { sortAsc = false; }          // 2nd click: Z→A
     else         { sortCol = null; }            // 3rd click: remove sort
   } else {
-    sortCol = col; sortAsc = true;              // 1st click on new col: A→Z
+    sortCol = col;
+    sortAsc = !['_deleted_date','_last_seen','_cadors_count','Year_of_Manu'].includes(col); // date/count cols default descending
   }
   // Update header styles (scope to main table only, not owner table)
   const ths = document.querySelectorAll('.table-wrap thead th');
-  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price'];
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price','_last_seen','_cadors_count'];
   ths.forEach(th => {
     th.classList.remove('sorted');
     const arrow = th.querySelector('.sort-arrow');
@@ -1416,7 +1478,7 @@ function render() {
   document.getElementById('btn-next').disabled = currentPage >= pages;
 
   if (slice.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="17" class="empty">No records match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="19" class="empty">No records match the current filters.</td></tr>';
     return;
   }
 
@@ -1439,6 +1501,8 @@ function render() {
       <td>${esc(r.Country)}</td>
       <td style="color:#aaa">${esc(r._deleted_date || '')}</td>
       <td>${r._for_sale ? `<a href="${esc(r._for_sale.url)}" target="_blank" style="color:#15803d;font-weight:600;white-space:nowrap">${esc((r._for_sale.source||'').replace(/^www\./,'').replace(/\.(com|ca|org|net)$/,''))}${r._for_sale.price ? ' · ' + esc(r._for_sale.price) : ''} ↗</a>${r._for_sale.date ? `<br><span style="color:#aaa;font-size:10px">${esc(r._for_sale.date)}</span>` : ''}` : ''}</td>
+      <td style="white-space:nowrap;color:#555">${r._last_seen ? (() => { const d = daysSince(r._last_seen); return d === 0 ? 'today' : d === 1 ? 'yesterday' : d + 'd ago'; })() : '<span style="color:#ddd">—</span>'}</td>
+      <td style="text-align:center">${r._cadors ? `<span class="badge-incident" onclick="window.open('https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CADORS-SCREAQ/ql.aspx?cno%3d%26dtef%3d%26dtet%3d2099-12-31%26otp%3d-1%26ftop%3d%253e%253d%26ftno%3d0%26ijop%3d%253e%253d%26ijno%3d0%26olc%3d%26prv%3d-1%26rgn%3d-1%26tsbno%3d%26tsbi%3d-1%26arno%3d%26ocatno%3d%26ocatop%3d1%26oevtno%3d%26oevtop%3d1%26evtacoc%3d3%26fltno%3d%26fltr%3d-1%26cars%3d-1%26acat%3d-1%26nar%3d%26aiddl%3d-1%26aidxt%3d%26optdl%3d-1%26optcomt%3d%26optseq%3d%26optxt%3d%26opdlxt%3dResults%2bwill%2bappear%2bin%2bthis%2blist%26mkdl%3d-1%26mkxt%3d%26mdldl%3d-1%26mdlxt%3d%26cmkdl%3dC%26cmkxt%3d${esc(r.Registration.trim())}','_blank')" title="${r._cadors.count} incident${r._cadors.count===1?'':'s'} · latest ${esc(r._cadors.latest)}">${r._cadors.count}</span>` : ''}</td>
     </tr>`).join('');
 }
 
@@ -1541,6 +1605,7 @@ function renderCharts() {
 function clearFilters() {
   ['f-reg','f-serial','f-owner'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-status').value = 'active';
+  document.getElementById('f-activity').value = '';
   resetMfrHierarchy();
   ['ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
   resetDualRange('dr-date', minDate, maxDate);
@@ -1706,7 +1771,7 @@ function exportCsv() {
   const headers = ['Registration','Owner Name','Year of Manu','Manufacturer','Model','Serial No',
     'Owner Registered Since','Reg Purpose','No Of Engines','Engine Type',
     'Address','City','Province','Postal Code','Country','Removed','FAA Reg',
-    'For Sale Source','For Sale URL','For Sale Price'];
+    'For Sale Source','For Sale URL','For Sale Price','Last Seen (ADS-B)','Incidents (CADORS)','Latest Incident'];
   const esc = v => {
     const s = v == null ? '' : String(v);
     return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
@@ -1717,6 +1782,9 @@ function exportCsv() {
     esc(r._for_sale?.source || ''),
     esc(r._for_sale?.url    || ''),
     esc(r._for_sale?.price  || ''),
+    esc(r._last_seen        || ''),
+    esc(r._cadors?.count    ?? ''),
+    esc(r._cadors?.latest   || ''),
   ].join(',')));
   const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
@@ -1726,7 +1794,17 @@ function exportCsv() {
   URL.revokeObjectURL(a.href);
 }
 
-// Initial load
+// Initial load — apply default sort header indicator
+(function() {
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price','_last_seen','_cadors_count'];
+  const idx  = cols.indexOf(sortCol);
+  const th   = document.querySelectorAll('.table-wrap thead th')[idx];
+  if (th) {
+    th.classList.add('sorted');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = '↓';
+  }
+})();
 applyFilters();
 </script>
 
