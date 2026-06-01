@@ -559,10 +559,6 @@
       <td>Transport Canada's Civil Aviation Daily Occurrence Reporting System. Used to surface safety incidents and accidents linked to each aircraft over the last 5 years.</td>
     </tr>
     <tr>
-      <td><a href="https://opensky-network.org" target="_blank" style="color:#1a3a5c">OpenSky Network</a></td>
-      <td>Crowdsourced live ADS-B flight tracking. Queried daily over Canadian airspace to record when each aircraft was last observed flying — helps distinguish active from dormant registrations.</td>
-    </tr>
-    <tr>
       <td><a href="https://registry.faa.gov/database/ReleasableAircraft.zip" target="_blank" style="color:#1a3a5c">FAA Registry</a></td>
       <td>US aircraft registry cross-referenced by serial number. Reveals the N-number when a Canadian-built aircraft is re-registered in the US, so it can still be tracked after leaving the Canadian register.</td>
     </tr>
@@ -728,11 +724,7 @@
     <label>Activity</label>
     <select id="f-activity" onchange="applyFilters()" style="border:1px solid #ccd0d9;border-radius:4px;padding:5px 8px;font-size:12px;height:30px;background:#fff;outline:none;cursor:pointer">
       <option value="">All</option>
-      <option value="dormant30">Not seen flying 30d+</option>
-      <option value="dormant90">Not seen flying 90d+</option>
-      <option value="dormant180">Not seen flying 180d+</option>
       <option value="incidents">Has incidents</option>
-      <option value="both">Not flying 90d+ + incidents</option>
     </select>
   </div>
 
@@ -813,7 +805,6 @@
         <th onclick="sortBy('Country')">Country <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('_deleted_date')">Removed <span class="col-info" data-tip="Date the aircraft was deregistered&#10;from the Canadian Civil Aircraft&#10;Register (Transport Canada CCARCS).">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('_for_sale_price')">Listing <span class="col-info" data-tip="For-sale price &amp; link scraped from&#10;Trade-A-Plane, Controller.com,&#10;and GlobalAir.com. Date = first seen.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
-        <th onclick="sortBy('_last_seen')">Last Seen <span class="col-info tip-left" data-tip="Last date the aircraft was observed&#10;flying over Canada via OpenSky&#10;Network live ADS-B data. Builds up&#10;over time with each daily run.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('_cadors_count')">Incidents <span class="col-info tip-left" data-tip="Number of incidents in the last 5 years&#10;from Transport Canada CADORS.&#10;Click badge to see incident details.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
       </tr>
     </thead>
@@ -1230,10 +1221,6 @@ function showRegPopup(e, reg, faaReg, saleUrl, saleSrc, salePrice) {
   popup.style.top  = y + 'px';
 }
 
-function daysSince(dateStr) {
-  if (!dateStr) return null;
-  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
-}
 
 // Debounce for text inputs
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
@@ -1352,12 +1339,7 @@ function checkRecord(r, s, skipId) {
   if (s.chartOwner && (r.Owner_Name || '').trim() !== s.chartOwner) return false;
   if (s.chartMfr   && normMfr(r.Manufacturer)    !== s.chartMfr)   return false;
   if (s.activity) {
-    const ds = daysSince(r._last_seen);
-    if (s.activity === 'dormant30'  && !(r._last_seen && ds >= 30))  return false;
-    if (s.activity === 'dormant90'  && !(r._last_seen && ds >= 90))  return false;
-    if (s.activity === 'dormant180' && !(r._last_seen && ds >= 180)) return false;
-    if (s.activity === 'incidents'  && !(r._cadors?.count > 0))      return false;
-    if (s.activity === 'both'       && !(r._last_seen && ds >= 90 && r._cadors?.count > 0)) return false;
+    if (s.activity === 'incidents' && !(r._cadors?.count > 0)) return false;
   }
   if (s.chartMap) {
     const { key, groupBy } = s.chartMap;
@@ -1409,7 +1391,6 @@ function applyFilters() {
         const n = +p.replace(/[^0-9]/g, '');
         return { tier: 0, v: isNaN(n) ? 0 : n };              // listed with price
       }
-      if (col === '_last_seen')   return r._last_seen   || '';
       if (col === '_cadors_count') return r._cadors?.count ?? 0;
       return r[col] ?? '';
     };
@@ -1440,11 +1421,11 @@ function sortBy(col) {
     else         { sortCol = null; }            // 3rd click: remove sort
   } else {
     sortCol = col;
-    sortAsc = !['_deleted_date','_last_seen','_cadors_count','Year_of_Manu'].includes(col); // date/count cols default descending
+    sortAsc = !['_deleted_date','_cadors_count','Year_of_Manu'].includes(col); // date/count cols default descending
   }
   // Update header styles (scope to main table only, not owner table)
   const ths = document.querySelectorAll('.table-wrap thead th');
-  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price','_last_seen','_cadors_count'];
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price','_cadors_count'];
   ths.forEach(th => {
     th.classList.remove('sorted');
     const arrow = th.querySelector('.sort-arrow');
@@ -1501,7 +1482,6 @@ function render() {
       <td>${esc(r.Country)}</td>
       <td style="color:#aaa">${esc(r._deleted_date || '')}</td>
       <td>${r._for_sale ? `<a href="${esc(r._for_sale.url)}" target="_blank" style="color:#15803d;font-weight:600;white-space:nowrap">${esc((r._for_sale.source||'').replace(/^www\./,'').replace(/\.(com|ca|org|net)$/,''))}${r._for_sale.price ? ' · ' + esc(r._for_sale.price) : ''} ↗</a>${r._for_sale.date ? `<br><span style="color:#aaa;font-size:10px">${esc(r._for_sale.date)}</span>` : ''}` : ''}</td>
-      <td style="white-space:nowrap;color:#555">${r._last_seen ? (() => { const d = daysSince(r._last_seen); return d === 0 ? 'today' : d === 1 ? 'yesterday' : d + 'd ago'; })() : '<span style="color:#ddd">—</span>'}</td>
       <td style="text-align:center">${r._cadors ? `<span class="badge-incident" onclick="window.open('https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CADORS-SCREAQ/ql.aspx?cno%3d%26dtef%3d%26dtet%3d2099-12-31%26otp%3d-1%26ftop%3d%253e%253d%26ftno%3d0%26ijop%3d%253e%253d%26ijno%3d0%26olc%3d%26prv%3d-1%26rgn%3d-1%26tsbno%3d%26tsbi%3d-1%26arno%3d%26ocatno%3d%26ocatop%3d1%26oevtno%3d%26oevtop%3d1%26evtacoc%3d3%26fltno%3d%26fltr%3d-1%26cars%3d-1%26acat%3d-1%26nar%3d%26aiddl%3d-1%26aidxt%3d%26optdl%3d-1%26optcomt%3d%26optseq%3d%26optxt%3d%26opdlxt%3dResults%2bwill%2bappear%2bin%2bthis%2blist%26mkdl%3d-1%26mkxt%3d%26mdldl%3d-1%26mdlxt%3d%26cmkdl%3dC%26cmkxt%3d${esc(r.Registration.trim())}','_blank')" title="${r._cadors.count} incident${r._cadors.count===1?'':'s'} · latest ${esc(r._cadors.latest)}">${r._cadors.count}</span>` : ''}</td>
     </tr>`).join('');
 }
@@ -1771,7 +1751,7 @@ function exportCsv() {
   const headers = ['Registration','Owner Name','Year of Manu','Manufacturer','Model','Serial No',
     'Owner Registered Since','Reg Purpose','No Of Engines','Engine Type',
     'Address','City','Province','Postal Code','Country','Removed','FAA Reg',
-    'For Sale Source','For Sale URL','For Sale Price','Last Seen (ADS-B)','Incidents (CADORS)','Latest Incident'];
+    'For Sale Source','For Sale URL','For Sale Price','Incidents (CADORS)','Latest Incident'];
   const esc = v => {
     const s = v == null ? '' : String(v);
     return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
@@ -1782,7 +1762,6 @@ function exportCsv() {
     esc(r._for_sale?.source || ''),
     esc(r._for_sale?.url    || ''),
     esc(r._for_sale?.price  || ''),
-    esc(r._last_seen        || ''),
     esc(r._cadors?.count    ?? ''),
     esc(r._cadors?.latest   || ''),
   ].join(',')));
@@ -1796,7 +1775,7 @@ function exportCsv() {
 
 // Initial load — apply default sort header indicator
 (function() {
-  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price','_last_seen','_cadors_count'];
+  const cols = ['Registration','Owner_Name','Year_of_Manu','Manufacturer','Model','Serial_No','Owner_Registered_Since','Reg_Purpose','No_Of_Engines','Engine_Type','Address','City','Province','Postal_Code','Country','_deleted_date','_for_sale_price','_cadors_count'];
   const idx  = cols.indexOf(sortCol);
   const th   = document.querySelectorAll('.table-wrap thead th')[idx];
   if (th) {
