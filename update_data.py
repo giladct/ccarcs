@@ -28,7 +28,6 @@ DATA_DIR     = PROJECT_DIR / 'CCARCS_data'
 FAA_DIR      = PROJECT_DIR / 'faa_data'
 DB_PATH      = PROJECT_DIR / 'ccarcs.db'
 DATA_JS      = PROJECT_DIR / 'data.js'
-ADSB_FILE    = PROJECT_DIR / 'adsb_seen.json'
 PAGE_URL     = 'https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/DDZip.aspx'
 FAA_URL      = 'https://registry.faa.gov/database/ReleasableAircraft.zip'
 CADORS_BASE  = 'https://opendatatc.tc.canada.ca'
@@ -58,64 +57,6 @@ def build_forsale_lookup(records):
             print(f'[ForSale] Could not read forsale_manual.json: {e}')
     return {}
 
-
-def build_adsb_lookup():
-    """Query OpenSky for Canadian airspace, accumulate last-seen dates in adsb_seen.json.
-    Returns raw-Registration -> last_seen_date dict."""
-    print('[ADS-B] Querying OpenSky for Canadian airspace...')
-
-    # Build ICAO24 hex -> raw Registration mapping (skip manufacturer=Other)
-    icao_to_reg = {}
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        for reg, mfr, mode_s in conn.execute(
-            'SELECT Registration, Manufacturer, MODE_S_TRANSPONDER_BINARY FROM aircraft'
-        ):
-            mode_s = (mode_s or '').strip()
-            if not mode_s or (mfr or '').strip().lower() == 'other':
-                continue
-            try:
-                icao_to_reg[format(int(mode_s, 2), '06x')] = reg
-            except ValueError:
-                pass
-        conn.close()
-    except Exception as e:
-        print(f'  WARNING: DB query failed: {e}')
-        return {}
-    print(f'  {len(icao_to_reg):,} ICAO24 codes mapped')
-
-    # Load existing history
-    history = {}
-    if ADSB_FILE.exists():
-        try:
-            history = json.loads(ADSB_FILE.read_text(encoding='utf-8'))
-        except Exception:
-            pass
-
-    today = date.today().isoformat()
-    try:
-        resp = requests.get(
-            'https://opensky-network.org/api/states/all',
-            params={'lamin': 41, 'lamax': 84, 'lomin': -141, 'lomax': -52},
-            timeout=60,
-            headers={'User-Agent': 'Mozilla/5.0'}
-        )
-        if resp.status_code == 200:
-            states  = resp.json().get('states') or []
-            matched = 0
-            for state in states:
-                icao24 = (state[0] or '').lower().strip()
-                if icao24 in icao_to_reg:
-                    history[icao24] = {'reg': icao_to_reg[icao24], 'last_seen': today}
-                    matched += 1
-            print(f'  {len(states):,} aircraft in snapshot, {matched} matched to C-regs')
-        else:
-            print(f'  WARNING: OpenSky returned HTTP {resp.status_code}')
-    except Exception as e:
-        print(f'  WARNING: OpenSky query failed: {e}')
-
-    ADSB_FILE.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding='utf-8')
-    return {v['reg']: v['last_seen'] for v in history.values()}
 
 
 def build_cadors_lookup():
@@ -463,15 +404,6 @@ def step5_generate():
     if forsale:
         matched = sum(1 for r in combined if r.get('_for_sale'))
         print(f'  {matched} records matched to for-sale listings')
-
-    adsb = build_adsb_lookup()
-    for r in combined:
-        last_seen = adsb.get(r.get('Registration', ''))
-        if last_seen:
-            r['_last_seen'] = last_seen
-        else:
-            r.pop('_last_seen', None)
-    print(f'  {sum(1 for r in combined if r.get("_last_seen")):,} records with ADS-B last-seen data')
 
     cadors = build_cadors_lookup()
     for r in combined:
