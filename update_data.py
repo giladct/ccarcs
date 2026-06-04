@@ -154,6 +154,9 @@ def normalize_serial(s):
 
 
 def build_faa_lookup():
+    """Return (active_lookup, dereg_lookup).
+    active_lookup: serial -> N-number for currently registered aircraft.
+    dereg_lookup:  serial -> {n, cancel_date, status} for deregistered/exported aircraft."""
     print('[FAA] Downloading FAA aircraft registry...')
     FAA_DIR.mkdir(exist_ok=True)
     zip_path = FAA_DIR / 'faa.zip'
@@ -167,30 +170,68 @@ def build_faa_lookup():
         print(f'  {len(resp.content) / 1_048_576:.0f} MB downloaded')
     except Exception as e:
         print(f'  WARNING: could not download FAA registry ({e}) — skipping cross-reference')
-        return {}
+        return {}, {}
+
+    def _read_zip(z, filename):
+        with z.open(filename) as f:
+            raw = f.read()
+        if raw.startswith(b'\xef\xbb\xbf'):
+            raw = raw[3:]
+        return raw.decode('latin-1')
+
+    active_lookup = {}
+    dereg_lookup  = {}
     try:
         with zipfile.ZipFile(zip_path) as z:
-            with z.open('MASTER.txt') as f:
-                raw = f.read()
-        if raw.startswith(b'\xef\xbb\xbf'):
-            raw = raw[3:]  # strip UTF-8 BOM
-        content = raw.decode('latin-1')
+            # Active registrations (MASTER.txt)
+            try:
+                content = _read_zip(z, 'MASTER.txt')
+                reader  = csv.reader(content.splitlines())
+                headers = [h.strip() for h in next(reader, [])]
+                for row in reader:
+                    if len(row) < 2:
+                        continue
+                    d      = dict(zip(headers, row))
+                    serial = normalize_serial(d.get('SERIAL NUMBER', ''))
+                    n_num  = (d.get('N-NUMBER', '') or '').strip()
+                    if serial and n_num and serial not in active_lookup:
+                        active_lookup[serial] = 'N' + n_num
+                print(f'  {len(active_lookup):,} active US registrations indexed')
+            except Exception as e:
+                print(f'  WARNING: could not read MASTER.txt ({e})')
+
+            # Deregistered / exported aircraft (DEREG.txt)
+            try:
+                content = _read_zip(z, 'DEREG.txt')
+                reader  = csv.reader(content.splitlines())
+                headers = [h.strip() for h in next(reader, [])]
+                for row in reader:
+                    if len(row) < 2:
+                        continue
+                    d      = dict(zip(headers, row))
+                    serial = normalize_serial(d.get('SERIAL NUMBER', ''))
+                    n_num  = (d.get('N-NUMBER', '') or '').strip()
+                    if not serial or not n_num:
+                        continue
+                    raw_date    = (d.get('CANCEL DATE', '') or '').strip()
+                    cancel_date = (f'{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}'
+                                   if len(raw_date) == 8 and raw_date.isdigit() else '')
+                    n_full = 'N' + n_num
+                    prev   = dereg_lookup.get(serial)
+                    # Keep the most recent deregistration per serial
+                    if prev is None or cancel_date > prev['cancel_date']:
+                        dereg_lookup[serial] = {'n': n_full, 'cancel_date': cancel_date,
+                                                'status': 'Cancelled'}
+                print(f'  {len(dereg_lookup):,} deregistered US registrations indexed')
+            except KeyError:
+                print('  WARNING: DEREG.txt not found in FAA ZIP — skipping history lookup')
+            except Exception as e:
+                print(f'  WARNING: could not read DEREG.txt ({e})')
     except Exception as e:
-        print(f'  WARNING: could not read MASTER.txt ({e}) — skipping cross-reference')
-        return {}
-    reader = csv.reader(content.splitlines())
-    headers = [h.strip() for h in next(reader, [])]
-    lookup = {}
-    for row in reader:
-        if len(row) < 2:
-            continue
-        d = dict(zip(headers, row))
-        serial = normalize_serial(d.get('SERIAL NUMBER', ''))
-        n_num  = (d.get('N-NUMBER', '') or '').strip()
-        if serial and n_num and serial not in lookup:
-            lookup[serial] = 'N' + n_num
-    print(f'  {len(lookup):,} US registrations indexed')
-    return lookup
+        print(f'  WARNING: could not open FAA ZIP ({e}) — skipping cross-reference')
+        return {}, {}
+
+    return active_lookup, dereg_lookup
 
 
 class _FormParser(HTMLParser):
@@ -377,16 +418,17 @@ def step5_generate():
 
     combined = data + removed
 
-    faa_lookup = build_faa_lookup()
-    if faa_lookup:
+    faa_lookup, faa_dereg = build_faa_lookup()
+    if faa_dereg:
         for r in combined:
             serial = normalize_serial(r.get('Serial_No', ''))
-            if serial and serial in faa_lookup:
-                r['_faa_reg'] = faa_lookup[serial]
+            r.pop('_faa_reg', None)  # never set — short serials cause false positives
+            if serial and serial in faa_dereg:
+                r['_faa_hist'] = faa_dereg[serial]
             else:
-                r.pop('_faa_reg', None)
-        matches = sum(1 for r in combined if r.get('_faa_reg'))
-        print(f'  {matches:,} records cross-referenced with FAA registry')
+                r.pop('_faa_hist', None)
+        hist = sum(1 for r in combined if r.get('_faa_hist'))
+        print(f'  {hist:,} records with former US registration (historical)')
 
     forsale = build_forsale_lookup(combined)
     for r in combined:
