@@ -543,7 +543,7 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every day</span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v2.0 &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every day</span>
   </div>
   <button class="info-btn" onclick="toggleInfoPopup(event)" title="Data sources">i</button>
 </header>
@@ -1466,7 +1466,7 @@ function render() {
 
   tbody.innerHTML = slice.map(r => `
     <tr${r._deleted ? ' class="deregistered"' : ''}>
-      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"},'${esc(r._faa_hist ? r._faa_hist.n : '')}','${esc(r._faa_hist ? r._faa_hist.cancel_date : '')}','${esc(r.Serial_No||'')}')">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_hist ? `<a class="badge-faa-hist" href="https://registry.faa.gov/AircraftInquiry/Search/SerialNumberResult?serialNum=${encodeURIComponent(r.Serial_No)}" target="_blank">${esc(r._faa_hist.n)}</a>` : ''}</td>
+      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"},'${esc(r._faa_hist ? r._faa_hist.n : '')}','${esc(r._faa_hist ? r._faa_hist.cancel_date : '')}','${esc(r.Serial_No||'')}')">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_hist ? `<span class="badge-faa-hist">${esc(r._faa_hist.n)}</span>` : ''}</td>
       <td title="${esc(r.Owner_Name)}">${esc(r.Owner_Name)}</td>
       <td>${esc(r.Year_of_Manu)}</td>
       <td title="${esc(r.Manufacturer)}">${esc(r.Manufacturer)}</td>
