@@ -499,6 +499,13 @@
     border: 1px solid #fcd34d;
   }
   .badge-faa-hist:hover { background: #fde68a; }
+  .badge-faa-reg {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    background: #dbeafe; color: #1d4ed8; border-radius: 3px;
+    padding: 1px 4px; margin-left: 5px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: .3px;
+    border: 1px solid #93c5fd;
+  }
   .badge-dereg {
     display: inline-block; font-size: 9px; font-weight: 700;
     background: #f0f0f0; color: #bbb; border-radius: 3px;
@@ -1211,7 +1218,9 @@ function showRegPopup(e, reg, faaReg, saleUrl, saleSrc, salePrice, faaHistN, faa
     `<a href="https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CCARCS-RIACC/RchSimpRes.aspx?cn=%7c%7c&mn=%7c%7c&sn=%7c%7c&on=%7c%7c&m=%7c${encodeURIComponent(t)}%7c&rfr=RchSimp.aspx" target="_blank">CA Register</a>` +
     (saleUrl ? `<a href="${saleUrl}" target="_blank" style="color:#15803d;font-weight:600">For Sale on ${saleSrc}${salePrice ? ' — ' + salePrice : ''} ↗</a>` : '') +
     (faaHistN ? `<a href="https://registry.faa.gov/AircraftInquiry/Search/SerialNumberResult?serialNum=${encodeURIComponent(serial)}" target="_blank">Former FAA · ${faaHistN}${faaHistDate ? ' · cancelled ' + faaHistDate : ''}</a>` : '') +
-    (faaHistN ? `<a href="https://www.flightaware.com/live/flight/${encodeURIComponent(faaHistN)}" target="_blank">FlightAware (${faaHistN})</a>` : '');
+    (faaHistN ? `<a href="https://www.flightaware.com/live/flight/${encodeURIComponent(faaHistN)}" target="_blank">FlightAware (${faaHistN})</a>` : '') +
+    (faaReg ? `<a href="https://registry.faa.gov/AircraftInquiry/Search/NNumberResult?NNumbertxt=${encodeURIComponent(faaReg)}" target="_blank">FAA Registry · ${faaReg}</a>` : '') +
+    (faaReg ? `<a href="https://www.flightaware.com/live/flight/${encodeURIComponent(faaReg)}" target="_blank">FlightAware (${faaReg})</a>` : '');
   // Position near click, keep inside viewport
   const vw = window.innerWidth, vh = window.innerHeight;
   let x = e.clientX + 6, y = e.clientY + 6;
@@ -1466,7 +1475,7 @@ function render() {
 
   tbody.innerHTML = slice.map(r => `
     <tr${r._deleted ? ' class="deregistered"' : ''}>
-      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"},'${esc(r._faa_hist ? r._faa_hist.n : '')}','${esc(r._faa_hist ? r._faa_hist.cancel_date : '')}','${esc(r.Serial_No||'')}')">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_hist ? `<span class="badge-faa-hist">${esc(r._faa_hist.n)}</span>` : ''}</td>
+      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"},'${esc(r._faa_hist ? r._faa_hist.n : '')}','${esc(r._faa_hist ? r._faa_hist.cancel_date : '')}','${esc(r.Serial_No||'')}')">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_hist ? `<span class="badge-faa-hist">${esc(r._faa_hist.n)}</span>` : ''}${r._faa_reg ? `<span class="badge-faa-reg">${esc(r._faa_reg)}</span>` : ''}</td>
       <td title="${esc(r.Owner_Name)}">${esc(r.Owner_Name)}</td>
       <td>${esc(r.Year_of_Manu)}</td>
       <td title="${esc(r.Manufacturer)}">${esc(r.Manufacturer)}</td>
