@@ -1475,7 +1475,7 @@ function render() {
 
   tbody.innerHTML = slice.map(r => `
     <tr${r._deleted ? ' class="deregistered"' : ''}>
-      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"},'${esc(r._faa_hist ? r._faa_hist.n : '')}','${esc(r._faa_hist ? r._faa_hist.cancel_date : '')}','${esc(r.Serial_No||'')}')">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_hist ? `<span class="badge-faa-hist">${esc(r._faa_hist.n)}</span>` : ''}${r._faa_reg ? `<span class="badge-faa-reg">${esc(r._faa_reg)}</span>` : ''}</td>
+      <td class="reg"><a href="#" onclick="showRegPopup(event,'${esc(r.Registration)}','${esc(r._faa_reg||'')}',${r._for_sale ? `'${esc(r._for_sale.url)}','${esc(r._for_sale.source)}','${esc(r._for_sale.price||'')}'` : "null,null,null"},'${esc(r._faa_hist ? r._faa_hist.n : '')}','${esc(r._faa_hist ? r._faa_hist.cancel_date : '')}','${esc(r.Serial_No||'')}')">${esc(r.Registration)}</a>${r._deleted ? '<span class="badge-dereg">removed</span>' : ''}${r._for_sale ? `<a class="badge-forsale" href="${esc(r._for_sale.url)}" target="_blank">For Sale</a>` : ''}${r._faa_hist ? `<span class="badge-faa-hist">${esc(r._faa_hist.n)}</span>` : ''}</td>
       <td title="${esc(r.Owner_Name)}">${esc(r.Owner_Name)}</td>
       <td>${esc(r.Year_of_Manu)}</td>
       <td title="${esc(r.Manufacturer)}">${esc(r.Manufacturer)}</td>
