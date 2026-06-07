@@ -209,11 +209,11 @@ def build_faa_lookup():
                     if len(row) < 2:
                         continue
                     d      = dict(zip(headers, row))
-                    serial = normalize_serial(d.get('SERIAL NUMBER', ''))
+                    serial = normalize_serial(d.get('SERIAL-NUMBER', d.get('SERIAL NUMBER', '')))
                     n_num  = (d.get('N-NUMBER', '') or '').strip()
                     if not serial or not n_num:
                         continue
-                    raw_date    = (d.get('CANCEL DATE', '') or '').strip()
+                    raw_date    = (d.get('CANCEL-DATE', d.get('CANCEL DATE', '')) or '').strip()
                     cancel_date = (f'{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}'
                                    if len(raw_date) == 8 and raw_date.isdigit() else '')
                     n_full = 'N' + n_num
