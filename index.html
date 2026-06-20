@@ -729,14 +729,6 @@
     </select>
   </div>
 
-  <div class="filter-group">
-    <label>Activity</label>
-    <select id="f-activity" onchange="applyFilters()" style="border:1px solid #ccd0d9;border-radius:4px;padding:5px 8px;font-size:12px;height:30px;background:#fff;outline:none;cursor:pointer">
-      <option value="">All</option>
-      <option value="incidents">Has incidents</option>
-    </select>
-  </div>
-
   <div class="filter-group" style="flex:0 0 auto">
     <label>&nbsp;</label>
     <label style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:400;cursor:pointer;height:30px;white-space:nowrap">
@@ -1337,7 +1329,6 @@ function getFilterState() {
     chartOwner: activeOwnerFilter,
     chartMfr:   activeMfrFilter,
     chartMap:   activeMapFilter,
-    activity:   document.getElementById('f-activity').value,
   };
 }
 
@@ -1357,9 +1348,6 @@ function checkRecord(r, s, skipId) {
   if (skipId !== 'ms-engines-num' && s.engNum    && !s.engNum.has(String(r.No_Of_Engines || '').trim())) return false;
   if (s.chartOwner && (r.Owner_Name || '').trim() !== s.chartOwner) return false;
   if (s.chartMfr   && normMfr(r.Manufacturer)    !== s.chartMfr)   return false;
-  if (s.activity) {
-    if (s.activity === 'incidents' && !(r._cadors?.count > 0)) return false;
-  }
   if (s.chartMap) {
     const { key, groupBy } = s.chartMap;
     let rKey;
@@ -1612,7 +1600,6 @@ function renderCharts() {
 function clearFilters() {
   ['f-reg','f-serial','f-owner'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-status').value = 'active';
-  document.getElementById('f-activity').value = '';
   resetMfrHierarchy();
   ['ms-model','ms-engine','ms-purpose','ms-province','ms-engines-num'].forEach(resetMs);
   resetDualRange('dr-date', minDate, maxDate);
