@@ -271,6 +271,7 @@
   .col-info:hover { color:#3b7dd8; }
   .col-info:hover::after { display:block; }
   .col-info.tip-left::after { left:auto; right:0; transform:none; }
+  .col-info.tip-right::after { left:0; transform:none; }
 
 
   tbody tr { border-bottom: 1px solid #eef0f3; }
@@ -550,7 +551,7 @@
 <header>
   <div>
     <h1>Canadian Civil Aircraft Register</h1>
-    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v2.0 &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every day</span>
+    <span>Transport Canada — CCARCS &nbsp;|&nbsp; v2.1 &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span> &nbsp;|&nbsp; Updates automatically every day</span>
   </div>
   <button class="info-btn" onclick="toggleInfoPopup(event)" title="Data sources">i</button>
 </header>
@@ -736,6 +737,14 @@
     </select>
   </div>
 
+  <div class="filter-group" style="flex:0 0 auto">
+    <label>&nbsp;</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:400;cursor:pointer;height:30px;white-space:nowrap">
+      <input type="checkbox" id="f-owner-au" onchange="toggleOwnerFilter(this)" style="width:12px;height:12px;margin:0">
+      Aviation Unlimited only
+    </label>
+  </div>
+
   <button class="btn-clear" onclick="clearFilters()">Clear</button>
 
 </div>
@@ -796,7 +805,7 @@
   <table>
     <thead>
       <tr>
-        <th onclick="sortBy('Registration')">Registration <span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('Registration')">Registration <span class="col-info tip-right" data-tip="Click the registration to see details.&#10;Badges shown next to it:&#10;'removed' = deregistered from CCARCS&#10;'For Sale' (green) = currently listed&#10;N-number (amber) = former US registration">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Owner_Name')">Owner Name <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Year_of_Manu')">Year of Manu. <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Manufacturer')">Manufacturer <span class="sort-arrow">&#8597;</span></th>
@@ -812,7 +821,7 @@
         <th onclick="sortBy('Postal_Code')">Postal Code <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('Country')">Country <span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('_deleted_date')">Removed <span class="col-info" data-tip="Date the aircraft was deregistered&#10;from the Canadian Civil Aircraft&#10;Register (Transport Canada CCARCS).">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
-        <th onclick="sortBy('_for_sale_price')">Listing <span class="col-info" data-tip="For-sale price &amp; link scraped from&#10;Trade-A-Plane, Controller.com,&#10;and GlobalAir.com. Date = first seen.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
+        <th onclick="sortBy('_for_sale_price')">Listing <span class="col-info" data-tip="For-sale price &amp; link scraped from&#10;Trade-A-Plane, Controller.com,&#10;and GlobalAir.com. Date = first seen.&#10;'removed' = no longer listed, with&#10;the date it was last seen for sale.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
         <th onclick="sortBy('_cadors_count')">Incidents <span class="col-info tip-left" data-tip="Number of incidents in the last 5 years&#10;from Transport Canada CADORS.&#10;Click badge to see incident details.">ⓘ</span><span class="sort-arrow">&#8597;</span></th>
       </tr>
     </thead>
@@ -1491,7 +1500,7 @@ function render() {
       <td>${esc(r.Postal_Code)}</td>
       <td>${esc(r.Country)}</td>
       <td style="color:#aaa">${esc(r._deleted_date || '')}</td>
-      <td>${r._for_sale ? `<a href="${esc(r._for_sale.url)}" target="_blank" style="color:#15803d;font-weight:600;white-space:nowrap">${esc((r._for_sale.source||'').replace(/^www\./,'').replace(/\.(com|ca|org|net)$/,''))}${r._for_sale.price ? ' · ' + esc(r._for_sale.price) : ''} ↗</a>${r._for_sale.date ? `<br><span style="color:#aaa;font-size:10px">${esc(r._for_sale.date)}</span>` : ''}` : ''}</td>
+      <td>${r._for_sale ? `<a href="${esc(r._for_sale.url)}" target="_blank" style="color:#15803d;font-weight:600;white-space:nowrap">${esc((r._for_sale.source||'').replace(/^www\./,'').replace(/\.(com|ca|org|net)$/,''))}${r._for_sale.price ? ' · ' + esc(r._for_sale.price) : ''} ↗</a>${r._for_sale.date ? `<br><span style="color:#aaa;font-size:10px">${esc(r._for_sale.date)}</span>` : ''}` : (r._for_sale_removed ? `<a href="${esc(r._for_sale_removed.url)}" target="_blank" style="color:#aaa;white-space:nowrap">${esc((r._for_sale_removed.source||'').replace(/^www\./,'').replace(/\.(com|ca|org|net)$/,''))}${r._for_sale_removed.price ? ' · ' + esc(r._for_sale_removed.price) : ''} ↗</a><br><span style="color:#aaa;font-size:10px">removed ${esc(r._for_sale_removed.date)}</span>` : '')}</td>
       <td style="text-align:center">${r._cadors ? `<span class="badge-incident" onclick="window.open('https://wwwapps.tc.gc.ca/Saf-Sec-Sur/2/CADORS-SCREAQ/ql.aspx?cno%3d%26dtef%3d%26dtet%3d2099-12-31%26otp%3d-1%26ftop%3d%253e%253d%26ftno%3d0%26ijop%3d%253e%253d%26ijno%3d0%26olc%3d%26prv%3d-1%26rgn%3d-1%26tsbno%3d%26tsbi%3d-1%26arno%3d%26ocatno%3d%26ocatop%3d1%26oevtno%3d%26oevtop%3d1%26evtacoc%3d3%26fltno%3d%26fltr%3d-1%26cars%3d-1%26acat%3d-1%26nar%3d%26aiddl%3d-1%26aidxt%3d%26optdl%3d-1%26optcomt%3d%26optseq%3d%26optxt%3d%26opdlxt%3dResults%2bwill%2bappear%2bin%2bthis%2blist%26mkdl%3d-1%26mkxt%3d%26mdldl%3d-1%26mdlxt%3d%26cmkdl%3dC%26cmkxt%3d${esc(r.Registration.trim())}','_blank')" title="${r._cadors.count} incident${r._cadors.count===1?'':'s'} · latest ${esc(r._cadors.latest)}">${r._cadors.count}</span>` : ''}</td>
     </tr>`).join('');
 }
@@ -1532,8 +1541,16 @@ function sortOwner(key) {
   renderCharts();
 }
 
+const AU_OWNER_NAME = 'Aviation Unlimited (1990) Inc.';
+
 function clickOwnerRow(name) {
   activeOwnerFilter = activeOwnerFilter === name ? null : name;
+  document.getElementById('f-owner-au').checked = activeOwnerFilter === AU_OWNER_NAME;
+  applyFilters();
+}
+
+function toggleOwnerFilter(checkbox) {
+  activeOwnerFilter = checkbox.checked ? AU_OWNER_NAME : null;
   applyFilters();
 }
 
@@ -1603,6 +1620,7 @@ function clearFilters() {
   activeOwnerFilter = null;
   activeMfrFilter   = null;
   activeMapFilter   = null;
+  document.getElementById('f-owner-au').checked = false;
   applyFilters();
 }
 

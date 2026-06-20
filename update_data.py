@@ -433,16 +433,29 @@ def step5_generate():
     forsale = build_forsale_lookup(combined)
     for r in combined:
         # Registration stored as ' XXXX' (leading space); forsale_manual.json uses 'C-XXXX'
-        reg_key = 'C-' + r.get('Registration', '').strip()
+        reg_key  = 'C-' + r.get('Registration', '').strip()
+        old_row  = old_by_reg.get(r.get('Registration', '')) or {}
+        old_sale = old_row.get('_for_sale')
         if reg_key in forsale:
             new_sale = dict(forsale[reg_key])
             # Preserve first-seen date across runs; set it on first appearance
-            old_sale = (old_by_reg.get(r.get('Registration', '')) or {}).get('_for_sale')
             prev_date = (old_sale or {}).get('date')
             new_sale['date'] = prev_date or today
             r['_for_sale'] = new_sale
+            r.pop('_for_sale_removed', None)
         else:
             r.pop('_for_sale', None)
+            # Carry forward source/price/url + removal date; date is set the run a listing first disappears
+            old_removed = old_row.get('_for_sale_removed')
+            if old_sale:
+                r['_for_sale_removed'] = {
+                    'source': old_sale.get('source'),
+                    'price':  old_sale.get('price'),
+                    'url':    old_sale.get('url'),
+                    'date':   (old_removed or {}).get('date') or today,
+                }
+            elif old_removed:
+                r['_for_sale_removed'] = old_removed
     if forsale:
         matched = sum(1 for r in combined if r.get('_for_sale'))
         print(f'  {matched} records matched to for-sale listings')

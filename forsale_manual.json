@@ -1,4 +1,34 @@
 {
+  "C-GMRR": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/252336589/1980-cessna-172n-skyhawk-piston-single-aircraft",
+    "price": "$145,900"
+  },
+  "C-GHQF": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/249397443/1980-piper-navajo-chieftain-piston-twin-aircraft",
+    "price": "$189,000"
+  },
+  "C-FKOD": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/248940817/1973-bell-206b-ii-turbine-helicopters",
+    "price": "$350,000"
+  },
+  "C-FMCL": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/254854423/2008-dassault-falcon-900dx-jet-aircraft",
+    "price": "$621"
+  },
+  "C-FBPQ": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/253888303/2006-eurocopter-as350b3-plus-turbine-helicopters",
+    "price": "$200"
+  },
+  "C-GAIX": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/242310391/1979-cessna-a185f-amphibian-piston-amphibious-slash-floatplanes",
+    "price": "$285,000"
+  },
   "C-GEGF": {
     "source": "trade-a-plane.com",
     "url": "https://www.trade-a-plane.com/search?listing_id=2447810&s-type=aircraft",
@@ -47,79 +77,65 @@
     "price": "$145,000",
     "date": null
   },
-  "C-GHMS": {
-    "source": "trade-a-plane.com",
-    "url": "https://www.trade-a-plane.com/search?listing_id=2431306&s-type=aircraft",
-    "price": "$425,000",
-    "date": null
-  },
   "C-FTTJ": {
     "source": "trade-a-plane.com",
     "url": "https://www.trade-a-plane.com/search?listing_id=2456606&s-type=aircraft",
-    "price": "$259,000",
+    "price": "$229,000",
     "date": null
   },
   "C-GBBB": {
-    "source": "globalair.com",
-    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/2003-challenger-604-jets/140681",
-    "price": null,
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listings/for-sale/jet-aircraft/3",
+    "price": "$200,000",
     "date": null
   },
   "C-FERG": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/254876765/2022-diamond-da62-piston-twin-aircraft",
-    "price": "$200"
+    "price": "$200",
+    "date": null
   },
   "C-FWWO": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listings/for-sale/piston-military-aircraft/10004",
-    "price": "$700,000"
+    "price": "$700,000",
+    "date": null
   },
   "C-FFFE": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/255072005/1981-cessna-turbo-u206g-stationair-piston-amphibious-slash-floatplanes",
-    "price": "$400,000"
+    "price": "$400,000",
+    "date": null
   },
   "C-GJPX": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listings/for-sale/turbine-amphibious-slash-floatplanes/71",
-    "price": "$2"
-  },
-  "C-GTKQ": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listings/for-sale/piston-helicopters/5",
-    "price": "$375,000"
+    "price": "$2",
+    "date": null
   },
   "C-FJJO": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/246962937/1970-mcdonnell-douglas-500c-turbine-helicopters",
-    "price": "$200"
-  },
-  "C-GAUU": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/250017969/2012-cirrus-sr22-g3-turbo-piston-single-aircraft",
-    "price": "$474,900"
+    "price": "$200",
+    "date": null
   },
   "C-GRST": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/225660885/2001-gulfstream-g200-jet-aircraft",
-    "price": "$3,450,000"
+    "price": "$3,300,000",
+    "date": null
   },
   "C-GORD": {
-    "source": "globalair.com",
-    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/1993-challenger-601-3a-er-jets/130835",
-    "price": null,
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/230721971/1993-bombardier-challenger-601-3a-slash-er-jet-aircraft",
+    "price": "$200",
     "date": null
   },
   "C-GKZB": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/254226861/1998-cessna-citation-v-ultra-jet-aircraft",
-    "price": "$200"
-  },
-  "C-FMCL": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/254854423/2008-dassault-falcon-900dx-jet-aircraft",
-    "price": "$621"
+    "price": "$1,095,000",
+    "date": null
   },
   "C-GTFU": {
     "source": "globalair.com",
@@ -130,77 +146,50 @@
   "C-GBNI": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/249613097/2007-cirrus-sr22-g3-turbo-piston-single-aircraft",
-    "price": "$409,999"
+    "price": "$409,999",
+    "date": null
   },
   "C-GVLZ": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/249618307/2005-mooney-m20r-ovation-3-gx-piston-single-aircraft",
-    "price": "$327,500"
+    "price": "$327,500",
+    "date": null
   },
   "C-GLLR": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/253207327/2020-piper-m350-piston-single-aircraft",
-    "price": "$1,205,000"
+    "price": "$1,205,000",
+    "date": null
   },
   "C-GOUF": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/254260945/1974-beechcraft-v35b-bonanza-piston-single-aircraft",
-    "price": "$160,000"
+    "price": "$160,000",
+    "date": null
   },
   "C-FSQJ": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/255836359/1979-bell-206b-iii-turbine-helicopters",
-    "price": "$200"
-  },
-  "C-FKOD": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/248940817/1973-bell-206b-ii-turbine-helicopters",
-    "price": "$350,000"
-  },
-  "C-GWVT": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/246117741/1975-cessna-u206f-stationair-piston-single-aircraft",
-    "price": "$249,000"
-  },
-  "C-GAIX": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/242310391/1979-cessna-a185f-amphibian-piston-amphibious-slash-floatplanes",
-    "price": "$285,000"
+    "price": "$200",
+    "date": null
   },
   "C-GSZT": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/253134151/1983-cessna-182r-skylane-piston-single-aircraft",
-    "price": "$275,000"
-  },
-  "C-GMRR": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/252336589/1980-cessna-172n-skyhawk-piston-single-aircraft",
-    "price": "$145,900"
+    "price": "$275,000",
+    "date": null
   },
   "C-FADE": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/254397539/1981-cessna-340a-piston-twin-aircraft",
-    "price": "$525,000"
+    "price": "$499,900",
+    "date": null
   },
   "C-GDAM": {
     "source": "www.controller.com",
     "url": "https://www.controller.com/listing/for-sale/252469255/1981-cessna-340a-piston-twin-aircraft",
-    "price": "$200"
-  },
-  "C-FWRG": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/245488363/2012-diamond-da42-ng-piston-twin-aircraft",
-    "price": "$749,000"
-  },
-  "C-FBPQ": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/253888303/2006-eurocopter-as350b3-plus-turbine-helicopters",
-    "price": "$200"
-  },
-  "C-GHQF": {
-    "source": "www.controller.com",
-    "url": "https://www.controller.com/listing/for-sale/249397443/1980-piper-navajo-chieftain-piston-twin-aircraft",
-    "price": "$189,000"
+    "price": "$395,000",
+    "date": null
   },
   "C-FUTL": {
     "source": "globalair.com",
@@ -275,9 +264,9 @@
     "date": null
   },
   "C-GLMI": {
-    "source": "globalair.com",
-    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/2014-citation-sovereignplus-jets/138828",
-    "price": null,
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/250777479/2014-cessna-citation-sovereign-plus-jet-aircraft",
+    "price": "$200",
     "date": null
   },
   "C-GJMS": {
@@ -320,6 +309,96 @@
     "source": "globalair.com",
     "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/1981-cessna-206-singles/137607",
     "price": null,
+    "date": null
+  },
+  "C-GQIK": {
+    "source": "trade-a-plane.com",
+    "url": "https://www.trade-a-plane.com/search?listing_id=2449960&s-type=aircraft",
+    "price": "$122,000",
+    "date": null
+  },
+  "C-GDTU": {
+    "source": "trade-a-plane.com",
+    "url": "https://www.trade-a-plane.com/search?listing_id=2456636&s-type=aircraft",
+    "price": "$107,000",
+    "date": null
+  },
+  "C-FDKJ": {
+    "source": "trade-a-plane.com",
+    "url": "https://www.trade-a-plane.com/search?listing_id=2454363&s-type=aircraft",
+    "price": "$699,000",
+    "date": null
+  },
+  "C-GPSE": {
+    "source": "trade-a-plane.com",
+    "url": "https://www.trade-a-plane.com/search?listing_id=2419138&s-type=aircraft",
+    "price": "$150,000",
+    "date": null
+  },
+  "C-GEMH": {
+    "source": "trade-a-plane.com",
+    "url": "https://www.trade-a-plane.com/search?listing_id=2438663&s-type=aircraft",
+    "price": "$195,000",
+    "date": null
+  },
+  "C-FZBK": {
+    "source": "globalair.com",
+    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/2005-citation-x-jets/141262",
+    "price": null,
+    "date": null
+  },
+  "C-GXDM": {
+    "source": "globalair.com",
+    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/1974-cessna-182-singles/141031",
+    "price": null,
+    "date": null
+  },
+  "C-FYAB": {
+    "source": "globalair.com",
+    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/2003-husky-a-1b-amphibian/141015",
+    "price": null,
+    "date": null
+  },
+  "C-GCZI": {
+    "source": "globalair.com",
+    "url": "https://www.globalair.com/aircraft-for-sale/listing-detail/1975-cessna-182-singles/140997",
+    "price": null,
+    "date": null
+  },
+  "C-FBNN": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listings/for-sale/experimental-slash-homebuilt-aircraft/2",
+    "price": "$150",
+    "date": null
+  },
+  "C-GGLR": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/256920627/2003-bombardier-challenger-604-jet-aircraft",
+    "price": "$200",
+    "date": null
+  },
+  "C-GFJX": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/256757639/1989-dassault-falcon-100-jet-aircraft",
+    "price": "$485,000",
+    "date": null
+  },
+  "C-GGGT": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/256801803/2016-gulfstream-g150-jet-aircraft",
+    "price": "$200",
+    "date": null
+  },
+  "C-GIEH": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/256861619/1990-bell-206b-iii-turbine-helicopters",
+    "price": "$200",
+    "date": null
+  },
+  "C-GBDT": {
+    "source": "www.controller.com",
+    "url": "https://www.controller.com/listing/for-sale/256811155/1980-bell-206b-iii-turbine-helicopters",
+    "price": "$200",
     "date": null
   }
 }
